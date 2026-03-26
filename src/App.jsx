@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 function App() {
   const [recipes, setRecipes] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -12,7 +13,8 @@ function App() {
 
   const fetchRecipes = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/recipes');
+      const response = await fetch(`http://127.0.0.1:8000/recipes?search=${searchTerm.trim()}`);
+
 
       if (response.ok) {
         const data = await response.json();
@@ -25,14 +27,14 @@ function App() {
 
   useEffect(() => {
     fetchRecipes();
-  }, []);
+  }, [searchTerm]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     
     setFormData({
       ...formData,
-      [name]: value === 'servings' ? parseInt(value) : value
+      [name]: name === 'servings' ? parseInt(value) || 0 : value
     });
   };
 
@@ -112,6 +114,17 @@ function App() {
             Сохранить рецепт
           </button>
         </form>
+      </div>
+      
+      <div style={{ marginBottom: '40px' }}>
+        <h2>Поиск рецептов</h2>
+        <input
+          type="text"
+          placeholder="Что хочешь поесть?"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ padding: '10px', fontSize: '16px', width: '100%', boxSizing: 'border-box' }}
+        />
       </div>
 
       <div>
