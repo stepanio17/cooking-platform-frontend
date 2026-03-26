@@ -53,7 +53,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(dataToSubmit)
       });
 
       if (response.ok) {
