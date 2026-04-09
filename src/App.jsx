@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 function App() {
   const [recipes, setRecipes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingRecipeId, setEditingRecipeId] = useState(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -41,6 +42,9 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const url = editingRecipeId ? `http://127.0.0.1:8000/recipes/${editingRecipeId}` : 'http://127.0.0.1:8000/recipes';
+    const method = editingRecipeId ? 'PUT' : 'POST';
+
     const dataToSubmit = {
       ...formData,
       servings: Number(formData.servings),
@@ -50,8 +54,8 @@ function App() {
     console.log('Данные для отправки:', dataToSubmit);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/recipes', {
-        method: 'POST',
+      const response = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json'
         },
@@ -60,14 +64,41 @@ function App() {
 
       if (response.ok) {
         fetchRecipes();
-        setFormData({...formData, title: '', description: ''});
+        setEditingRecipeId(null);
+        setFormData({title: '', description: '', servings: 4, author_id: 1});
       } else {
         const errorDetails = await response.json();
+        alert(errorDetails.detail);
         console.log("Детали ошибки 422:", errorDetails);
       }
     } catch (error) {
       console.error('Ошибка при отправки рецепта:', error);
     }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Вы уверены, что хотите удалить этот рецепт?')) return;
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/recipes/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) fetchRecipes();
+    } catch (error) {
+      console.error('Ошибка при удалении рецепта:', error);
+    }
+  };
+
+  const startEditing = (recipe) => {
+    setEditingRecipeId(recipe.id);
+    setFormData({
+      title: recipe.title,
+      description: recipe.description,
+      servings: recipe.servings,
+      author_id: recipe.author_id
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -137,6 +168,34 @@ function App() {
               <li key={recipe.id} style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
                 <h3>{recipe.title}. Порций: {recipe.servings}</h3>
                 <p>{recipe.description}</p>
+              
+                <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
+                  <button onClick={() => startEditing(recipe)} 
+                  style={{ 
+                    padding: '5px 10px',  
+                    backgroundColor: '#2196F3', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px',
+                    cursor: 'pointer' 
+                    }}
+                  >
+                    Редактировать
+                  </button>
+                  
+                  <button onClick={() => handleDelete(recipe.id)} 
+                  style={{ 
+                    padding: '5px 10px', 
+                    backgroundColor: '#f44336', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px',
+                    cursor: 'pointer' 
+                    }}
+                  >
+                    Удалить
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
