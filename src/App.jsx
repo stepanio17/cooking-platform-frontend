@@ -4,12 +4,12 @@ function App() {
   const [recipes, setRecipes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingRecipeId, setEditingRecipeId] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token'));
 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    servings: 4,
-    author_id: 1
+    servings: 4
   });
 
   const fetchRecipes = async () => {
@@ -30,6 +30,43 @@ function App() {
     fetchRecipes();
   }, [searchTerm]);
 
+  const handleRegister = async () => {
+    const username = prompt("Введите имя пользователя для регистрации:");
+    const password = prompt("Введите пароль для регистрации:");
+    const email = prompt("Введите email для регистрации:");
+
+    if (!username || !password || !email) return;
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          username: username, 
+          password: password, 
+          email: email 
+        })
+      });
+
+      if (response.ok) {
+        alert('Регистрация прошла успешно!');
+      } else {
+        const errorDetails = await response.json();
+        alert(errorDetails.detail || "Произошла ошибка при регистрации.");
+      }
+    } catch (error) {
+      console.error('Ошибка:', error);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setToken(null);
+    alert('Вы вышли из системы.');
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     
@@ -39,16 +76,53 @@ function App() {
     });
   };
 
+  const handleLogin = async () => {
+    const username = prompt("Введите имя пользователя:");
+    const password = prompt("Введите пароль:");
+
+    if (!username || !password) return;
+
+    const loginData = new URLSearchParams();
+    loginData.append('username', username);
+    loginData.append('password', password);
+    
+    try {
+      const response = await fetch('http://127.0.0.1:8000/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'},
+        body: loginData.toString()
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('token', data.access_token);
+        setToken(data.access_token);
+        alert('Успешный вход!');
+      } else {
+        alert("Неверное имя пользователя или пароль");
+      }
+    } catch (error) {
+      console.error('Ошибка при входе:', error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Пожалуйста, войдите в систему, чтобы добавить рецепт.');
+      return;
+    }
 
     const url = editingRecipeId ? `http://127.0.0.1:8000/recipes/${editingRecipeId}` : 'http://127.0.0.1:8000/recipes';
     const method = editingRecipeId ? 'PUT' : 'POST';
 
     const dataToSubmit = {
-      ...formData,
-      servings: Number(formData.servings),
-      author_id: Number(formData.author_id) 
+      title: formData.title,
+      description: formData.description,
+      servings: Number(formData.servings), 
     };
 
     console.log('Данные для отправки:', dataToSubmit);
@@ -57,7 +131,8 @@ function App() {
       const response = await fetch(url, {
         method: method,
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(dataToSubmit)
       });
@@ -66,10 +141,14 @@ function App() {
         fetchRecipes();
         setEditingRecipeId(null);
         setFormData({title: '', description: '', servings: 4, author_id: 1});
+        alert(`Рецепт успешно ${editingRecipeId ? 'обновлен' : 'создан'}!`);
       } else {
         const errorDetails = await response.json();
-        alert(errorDetails.detail);
-        console.log("Детали ошибки 422:", errorDetails);
+        if (response.status === 401) {
+          alert("Cессия истекла. Пожалуйста, войдите снова.");
+        } else {
+          alert(errorDetails.detail || "Произошла ошибка при сохранении рецепта.");
+        }
       }
     } catch (error) {
       console.error('Ошибка при отправки рецепта:', error);
@@ -81,7 +160,10 @@ function App() {
 
     try {
       const response = await fetch(`http://127.0.0.1:8000/recipes/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (response.ok) fetchRecipes();
@@ -102,7 +184,25 @@ function App() {
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
+    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
+      
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px' }}>
+        {!token && (
+          <button onClick={handleRegister} style={{ padding: '10px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+            Регистрация
+          </button>
+        )}
+        {token ? (
+          <button onClick={handleLogout} style={{padding: '10px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}>
+            Выйти
+          </button>
+        ) : (
+          <button onClick={handleLogin} style={{padding: '10px', backgroundColor: '#2196f3', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}>
+            Войти
+          </button>
+        )}
+      </div>
+        
       <h1>Recipe Platfrom</h1>
 
       <div>
@@ -168,12 +268,12 @@ function App() {
               <li key={recipe.id} style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
                 <h3>{recipe.title}. Порций: {recipe.servings}</h3>
                 <p>{recipe.description}</p>
-              
-                <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
-                  <button onClick={() => startEditing(recipe)} 
-                  style={{ 
-                    padding: '5px 10px',  
-                    backgroundColor: '#2196F3', 
+                {token && (
+                  <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
+                    <button onClick={() => startEditing(recipe)} 
+                    style={{ 
+                      padding: '5px 10px',  
+                      backgroundColor: '#2196F3', 
                     color: 'white', 
                     border: 'none', 
                     borderRadius: '4px',
@@ -196,6 +296,7 @@ function App() {
                     Удалить
                   </button>
                 </div>
+                )}
               </li>
             ))}
           </ul>
