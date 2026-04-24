@@ -5,6 +5,9 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingRecipeId, setEditingRecipeId] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [serverError, setServerError] = useState(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -13,16 +16,22 @@ function App() {
   });
 
   const fetchRecipes = async () => {
+    setIsLoading(true);
+    setServerError(null);
     try {
       const response = await fetch(`http://127.0.0.1:8000/recipes?search=${searchTerm.trim()}`);
-
 
       if (response.ok) {
         const data = await response.json();
         setRecipes(data);
+      } else {
+        setServerError("Ошибка при подключении к серверу. Пожалуйста, попробуйте позже.");
       }
     } catch (error) {
       console.error('Ошибка при подключении к серверу:', error);
+      setServerError("Ошибка при подключении к серверу. Пожалуйста, попробуйте позже.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -126,7 +135,7 @@ function App() {
     };
 
     console.log('Данные для отправки:', dataToSubmit);
-
+    setIsSaving(true);
     try {
       const response = await fetch(url, {
         method: method,
@@ -140,18 +149,24 @@ function App() {
       if (response.ok) {
         fetchRecipes();
         setEditingRecipeId(null);
-        setFormData({title: '', description: '', servings: 4, author_id: 1});
+        setFormData({title: '', description: '', servings: 4});
         alert(`Рецепт успешно ${editingRecipeId ? 'обновлен' : 'создан'}!`);
       } else {
         const errorDetails = await response.json();
         if (response.status === 401) {
           alert("Cессия истекла. Пожалуйста, войдите снова.");
+        } else if (response.status === 422) {
+          const messages = errorDetails.detail.flat().map(err => `${err.loc[1]}: ${err.msg}`).join('\n'); 
+          alert(`Ошибка данных:\n${messages}`);
         } else {
           alert(errorDetails.detail || "Произошла ошибка при сохранении рецепта.");
         }
       }
     } catch (error) {
       console.error('Ошибка при отправки рецепта:', error);
+      alert("Ошибка соединения с сервером. Пожалуйста, попробуйте позже.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -184,8 +199,7 @@ function App() {
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
-      
+    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>   
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px' }}>
         {!token && (
           <button onClick={handleRegister} style={{ padding: '10px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
@@ -241,8 +255,14 @@ function App() {
             />
           </label>
 
-          <button type="submit" style={{ padding: '10px', fontSize: '16px', backgroundColor: '#4CAF50', color: 'white', border: 'none', cursor: 'pointer' }}>
-            Сохранить рецепт
+          <button 
+            type="submit" 
+            disabled={isSaving}
+            style={{ 
+              padding: '10px', fontSize: '16px', backgroundColor: '#4CAF50', color: 'white', border: 'none', cursor: 'pointer',
+              backgroundColor: isSaving ? '#9E9E9E' : '#4CAF50'}}
+            >
+            {isSaving ? 'Сохранение...' : 'Сохранить рецепт'}
           </button>
         </form>
       </div>
@@ -260,8 +280,16 @@ function App() {
 
       <div>
         <h2>Рецепты</h2>
-        {recipes.length === 0 ? (
-          <p>Нет рецептов для отображения. Нажмите на кнопочку, пожалуйста, чтобы мы могли покушать наконец-то.</p>
+        {serverError && (
+          <div style={{ padding: '15px', backgroundColor: '#ffebee', color: '#c62828', borderRadius: '5px', marginBottom: '20px' }}>
+            {serverError}
+          </div>
+        )}
+
+        {isLoading ? (
+          <p style={{ fontSize: '16px', color: '#555555' }}>Загрузка рецептов...</p>
+        ) : recipes.length === 0 && !serverError ? (
+          <p>Рецепты не найдены. Будьте первыми, кто добавит рецепт!</p>
         ) : (
           <ul style={{ listStyleType: 'none', padding: 0 }}>
             {recipes.map(recipe => (
