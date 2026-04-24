@@ -11,6 +11,7 @@ function App() {
   const [formError, setFormError] = useState(null);
   const categories = ["Все", "Завтраки", "Веганское", "Дешево", "Быстро"];
   const [selectedCategory, setSelectedCategory] = useState("Все");
+  const [sortBy, setSortBy] = useState("newest");
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -22,7 +23,7 @@ function App() {
     setIsLoading(true);
     setServerError(null);
     try {
-      const response = await fetch(`http://127.0.0.1:8000/recipes?search=${searchTerm.trim()}&category=${selectedCategory}`);
+      const response = await fetch(`http://127.0.0.1:8000/recipes?search=${searchTerm.trim()}&category=${selectedCategory}&sort_by=${sortBy}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -40,7 +41,7 @@ function App() {
 
   useEffect(() => {
     fetchRecipes();
-  }, [searchTerm, selectedCategory]);
+  }, [searchTerm, selectedCategory, sortBy]);
 
   const handleRegister = async () => {
     const username = prompt("Введите имя пользователя для регистрации:");
@@ -332,6 +333,17 @@ function App() {
             </button>
           ))}
         </div>
+      </div>
+
+      <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
+        Сортировка
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          style={{ marginLeft: '10px', padding: '5px', fontSize: '16px', border: '1px solid #ccc', borderRadius: '4px' }}
+        >
+          <option value="newest">Сначала новые</option>
+        </select>
       </div>
 
       <div>
