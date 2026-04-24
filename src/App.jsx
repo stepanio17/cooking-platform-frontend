@@ -8,7 +8,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [serverError, setServerError] = useState(null);
-
+  const [formError, setFormError] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -78,6 +78,8 @@ function App() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    setFormError(null);
     
     setFormData({
       ...formData,
@@ -118,6 +120,7 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError(null);
 
     const token = localStorage.getItem('token');
     if (!token) {
@@ -134,8 +137,8 @@ function App() {
       servings: Number(formData.servings), 
     };
 
-    console.log('Данные для отправки:', dataToSubmit);
     setIsSaving(true);
+
     try {
       const response = await fetch(url, {
         method: method,
@@ -153,18 +156,19 @@ function App() {
         alert(`Рецепт успешно ${editingRecipeId ? 'обновлен' : 'создан'}!`);
       } else {
         const errorDetails = await response.json();
+        
         if (response.status === 401) {
-          alert("Cессия истекла. Пожалуйста, войдите снова.");
+          setFormError("Ceccия истекла. Пожалуйста, войдите снова.");
         } else if (response.status === 422) {
           const messages = errorDetails.detail.flat().map(err => `${err.loc[1]}: ${err.msg}`).join('\n'); 
-          alert(`Ошибка данных:\n${messages}`);
+          setFormError(`Ошибка данных:\n${messages}`);
         } else {
-          alert(errorDetails.detail || "Произошла ошибка при сохранении рецепта.");
+          setFormError(typeof errorDetails.detail === 'string' ? errorDetails.detail : "Произошла ошибка при сохранении рецепта.");
         }
       }
     } catch (error) {
       console.error('Ошибка при отправки рецепта:', error);
-      alert("Ошибка соединения с сервером. Пожалуйста, попробуйте позже.");
+      setFormError("Ошибка соединения с сервером. Пожалуйста, попробуйте позже.");
     } finally {
       setIsSaving(false);
     }
@@ -221,6 +225,20 @@ function App() {
 
       <div>
         <h2>New Recipe</h2>
+
+        {formError && (
+          <div style={{ 
+            padding: '15px', 
+            backgroundColor: '#ffebee', 
+            color: 'red', 
+            borderRadius: '5px', 
+            marginBottom: '20px',
+            border: '1px solid #ef9a9a'
+          }}>
+            {formError}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           
           <input 
