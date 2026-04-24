@@ -9,17 +9,20 @@ function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [serverError, setServerError] = useState(null);
   const [formError, setFormError] = useState(null);
+  const categories = ["Все", "Завтраки", "Веганское", "Дешево", "Быстро"];
+  const [selectedCategory, setSelectedCategory] = useState("Все");
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    servings: 4
+    servings: 4,
+    category: ''
   });
 
   const fetchRecipes = async () => {
     setIsLoading(true);
     setServerError(null);
     try {
-      const response = await fetch(`http://127.0.0.1:8000/recipes?search=${searchTerm.trim()}`);
+      const response = await fetch(`http://127.0.0.1:8000/recipes?search=${searchTerm.trim()}&category=${selectedCategory}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -37,7 +40,7 @@ function App() {
 
   useEffect(() => {
     fetchRecipes();
-  }, [searchTerm]);
+  }, [searchTerm, selectedCategory]);
 
   const handleRegister = async () => {
     const username = prompt("Введите имя пользователя для регистрации:");
@@ -135,6 +138,7 @@ function App() {
       title: formData.title,
       description: formData.description,
       servings: Number(formData.servings), 
+      category: formData.category
     };
 
     setIsSaving(true);
@@ -273,6 +277,20 @@ function App() {
             />
           </label>
 
+          <label>
+            Категория:
+            <select 
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              style={{ padding: '10px', fontSize: '16px', marginLeft: '10px' }}
+            >
+              {categories.filter(c => c !== "Все").map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </label>
+
           <button 
             type="submit" 
             disabled={isSaving}
@@ -294,6 +312,26 @@ function App() {
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ padding: '10px', fontSize: '16px', width: '100%', boxSizing: 'border-box' }}
         />
+
+        <div style={{ display: 'flex', gap: '10px', marginTop: '15px', flexWrap: 'wrap' }}>
+          {categories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              style={{
+                padding: '8px 15px',
+                backgroundColor: selectedCategory === cat ? '#2196f3' : '#f0f0f0',
+                color: selectedCategory === cat ? 'white' : 'black',
+                border: '1px solid #ccc',
+                borderRadius: '20px',
+                cursor: 'pointer',
+                transition: '0.3s'
+              }}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div>
