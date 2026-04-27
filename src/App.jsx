@@ -16,7 +16,8 @@ function App() {
     title: '',
     description: '',
     servings: 4,
-    category: ''
+    category: '',
+    image: null
   });
 
   const fetchRecipes = async () => {
@@ -155,9 +156,21 @@ function App() {
       });
 
       if (response.ok) {
+        const savedRecipe = await response.json();
+        if (formData.image) {
+          const imageData = new FormData();
+          imageData.append("file", formData.image);
+          
+          await fetch(`http://127.0.0.1:8000/recipes/${savedRecipe.id}/image`, {
+            method: 'POST',
+            headers: {'Authorization': `Bearer ${token}`},
+            body: imageData
+          });
+        }
+
         fetchRecipes();
         setEditingRecipeId(null);
-        setFormData({title: '', description: '', servings: 4});
+        setFormData({title: '', description: '', servings: 4, category: '', image: null});
         alert(`Рецепт успешно ${editingRecipeId ? 'обновлен' : 'создан'}!`);
       } else {
         const errorDetails = await response.json();
@@ -292,6 +305,17 @@ function App() {
             </select>
           </label>
 
+          <label>
+            Фотография:
+            <input
+              type="file"
+              name="image"
+              accept="image/*"
+              onChange={(e) => setFormData({ ...formData, image: e.target.files[0] })}
+              style={{ padding: '10px', fontSize: '16px', marginLeft: '10px' }}
+            />
+          </label>
+
           <button 
             type="submit" 
             disabled={isSaving}
@@ -362,37 +386,39 @@ function App() {
           <ul style={{ listStyleType: 'none', padding: 0 }}>
             {recipes.map(recipe => (
               <li key={recipe.id} style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
-                <h3>{recipe.title}. Порций: {recipe.servings}</h3>
-                <p>{recipe.description}</p>
-                {token && (
-                  <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
-                    <button onClick={() => startEditing(recipe)} 
-                    style={{ 
-                      padding: '5px 10px',  
-                      backgroundColor: '#2196F3', 
-                    color: 'white', 
-                    border: 'none', 
-                    borderRadius: '4px',
-                    cursor: 'pointer' 
-                    }}
-                  >
+                {recipe.image_url && (
+                  <img 
+                  src={recipe.image_url} 
+                  alt={`Фото блюда: ${recipe.title}`} 
+                  style={{ 
+                    width: '100%', 
+                    maxHeight: '300px', 
+                    objectFit: 'cover', 
+                    borderRadius: '5px',
+                    marginBottom: '15px' 
+                  }}
+                />
+              )}
+
+              <h3 style={{ marginTop: '0' }}>{recipe.title}. Порций: {recipe.servings}</h3>
+              
+              <p style={{ color: '#2196f3', fontWeight: 'bold', margin: '5px 0' }}>
+                Категория: {recipe.category || 'Без категории'}
+              </p>
+
+              <p>{recipe.description}</p>
+
+              {token && (
+                <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                  <button onClick={() => startEditing(recipe)} style={{ padding: '8px 12px', backgroundColor: '#2196f3', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
                     Редактировать
                   </button>
                   
-                  <button onClick={() => handleDelete(recipe.id)} 
-                  style={{ 
-                    padding: '5px 10px', 
-                    backgroundColor: '#f44336', 
-                    color: 'white', 
-                    border: 'none', 
-                    borderRadius: '4px',
-                    cursor: 'pointer' 
-                    }}
-                  >
+                  <button onClick={() => handleDelete(recipe.id)} style={{ padding: '8px 12px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
                     Удалить
                   </button>
                 </div>
-                )}
+              )}
               </li>
             ))}
           </ul>
