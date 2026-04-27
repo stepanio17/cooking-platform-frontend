@@ -85,10 +85,19 @@ function App() {
     const { name, value } = e.target;
 
     setFormError(null);
+
+    let finalValue = value;
+
+    if (name === 'servings') {
+      finalValue = value.replace(/^0+(?=\d)/, '');
     
+      if (finalValue !== '' && parseInt(finalValue) > 16) {
+        setFormError("Максимальное количество порций - 16. Уменьшите количество порций.");
+      }
+    } 
     setFormData({
       ...formData,
-      [name]: name === 'servings' ? parseInt(value) || 0 : value
+      [name]: finalValue
     });
   };
 
@@ -127,6 +136,10 @@ function App() {
     e.preventDefault();
     setFormError(null);
 
+    if (Number(formData.servings) > 16) {
+      setFormError("Нельзя сохранить рецепт, количество порций превышает 16.");
+      return;
+    }
     const token = localStorage.getItem('token');
     if (!token) {
       alert('Пожалуйста, войдите в систему, чтобы добавить рецепт.');
@@ -285,6 +298,7 @@ function App() {
               name="servings"
               placeholder="Количество порций"
               min="1"
+              max="16"
               value={formData.servings}
               onChange={handleChange}
               style={{ padding: '10px', fontSize: '16px', marginLeft: '10px' }}
