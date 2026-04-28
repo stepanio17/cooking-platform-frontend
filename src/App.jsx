@@ -17,7 +17,8 @@ function App() {
     description: '',
     servings: 4,
     category: '',
-    image: null
+    image: null,
+    ingredients: []
   });
 
   const fetchRecipes = async () => {
@@ -101,6 +102,24 @@ function App() {
     });
   };
 
+  const handleIngredientChange = (index, field, value) => {
+    const updatedIngredients = [...formData.ingredients];
+    updatedIngredients[index][field] = value;
+    setFormData({...formData, ingredients: updatedIngredients});
+  }
+
+  const addIngredientRow = () => {
+    setFormData({
+      ...formData,
+      ingredients: [...formData.ingredients, { name: '', amount: '', unit: 'г' }]
+    });
+  };
+
+  const removeIngredientRow = (index) => {
+    const updatedIngredients = formData.ingredients.filter((_, i) => i !== index);
+    setFormData({...formData, ingredients: updatedIngredients});
+  }
+
   const handleLogin = async () => {
     const username = prompt("Введите имя пользователя:");
     const password = prompt("Введите пароль:");
@@ -153,7 +172,12 @@ function App() {
       title: formData.title,
       description: formData.description,
       servings: Number(formData.servings), 
-      category: formData.category
+      category: formData.category,
+      ingredients: formData.ingredients.map(ing => ({
+        name: ing.name,
+        amount: Number(ing.amount),
+        unit: ing.unit
+      }))
     };
 
     setIsSaving(true);
@@ -183,7 +207,14 @@ function App() {
 
         fetchRecipes();
         setEditingRecipeId(null);
-        setFormData({title: '', description: '', servings: 4, category: '', image: null});
+        setFormData({
+          title: '', 
+          description: '', 
+          servings: 4, 
+          category: 'Завтраки', 
+          image: null,
+          ingredients: []
+        });
         alert(`Рецепт успешно ${editingRecipeId ? 'обновлен' : 'создан'}!`);
       } else {
         const errorDetails = await response.json();
@@ -228,7 +259,13 @@ function App() {
       title: recipe.title,
       description: recipe.description,
       servings: recipe.servings,
-      author_id: recipe.author_id
+      category: recipe.category || 'Завтраки',
+      image: null,
+      ingredients: recipe.ingredients.map(ing => ({
+        name: ing.name,
+        amount: ing.amount,
+        unit: ing.unit
+      }))
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -318,6 +355,57 @@ function App() {
               ))}
             </select>
           </label>
+
+          <div style={{ margin: '10px 0', padding: '15px', border: '1px solid #ccc', borderRadius: '5px' }}>
+            <h4 style={{marginTop: 0}}>Ингредиенты</h4>
+
+            {formData.ingredients.map((ing, index) => (
+              <div key={index} style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  placeholder="Название ингредиента"
+                  value={ing.name}
+                  onChange={(e) => handleIngredientChange(index, 'name', e.target.value)}
+                  style={{ flex: 1, padding: '10px', fontSize: '16px' }}
+                />
+                <input
+                  type="number"
+                  placeholder="Количество"
+                  value={ing.amount}
+                  onChange={(e) => handleIngredientChange(index, 'amount', e.target.value)}
+                  style={{ padding: '8px', width: '80px' }}
+                />
+                <select
+                  value={ing.unit}
+                  onChange={(e) => handleIngredientChange(index, 'unit', e.target.value)}
+                  style={{ padding: '8px', fontSize: '16px' }}
+                >
+                  <option value="г">г</option>
+                  <option value="кг">кг</option>
+                  <option value="мл">мл</option>
+                  <option value="л">л</option>
+                  <option value="шт">шт</option>
+                  <option value="ст.л.">ст.л.</option>
+                  <option value="ч.л.">ч.л.</option>
+                  <option value="по вкусу">по вкусу</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => removeIngredientRow(index)}
+                  style={{ padding: '10px', fontSize: '16px', backgroundColor: '#f44336', color: 'white', border: 'none', cursor: 'pointer' }}
+                >
+                  Удалить
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addIngredientRow}
+              style={{ padding: '10px', fontSize: '16px', backgroundColor: '#2196F3', color: 'white', border: 'none', cursor: 'pointer' }}
+            >
+              Добавить ингредиент
+            </button>
+          </div>
 
           <label>
             Фотография:
@@ -419,6 +507,19 @@ function App() {
               <p style={{ color: '#2196f3', fontWeight: 'bold', margin: '5px 0' }}>
                 Категория: {recipe.category || 'Без категории'}
               </p>
+
+              {recipe.ingredients && recipe.ingredients.length > 0 && (
+                <div style={{ background: '#f9f9f9', padding: '10px', borderRadius: '5px', marginBottom: '10px 0' }}>
+                  <h4 style={{ margin: '0 0 10px 0' }}>Ингредиенты:</h4>
+                  <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                    {recipe.ingredients.map(ing => (
+                      <li key={ing.id}>
+                        {ing.name} - <strong>{ing.amount} {ing.unit}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <p>{recipe.description}</p>
 
