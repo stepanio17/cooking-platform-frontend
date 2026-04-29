@@ -12,6 +12,8 @@ function App() {
   const categories = ["Все", "Завтраки", "Веганское", "Дешево", "Быстро"];
   const [selectedCategory, setSelectedCategory] = useState("Все");
   const [sortBy, setSortBy] = useState("newest");
+  const [favoriteIds, setFavoriteIds] = useState([]);
+  const [viewMode, setViewMode] = useState('all');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -41,9 +43,41 @@ function App() {
     }
   };
 
+  const fetchFavorites = async (requestedMode) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch('http://127.0.1:8000/favorites', {
+        headers: {'Authorization': `Bearer ${token}`}
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        setFavoriteIds(data.map(recipe => recipe.id));
+
+        const activeMode = requestedMode || viewMode;
+
+        if (activeMode === 'favorites') {
+          setRecipes(data);
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке избранных рецептов:', error);
+    }
+  };
+
   useEffect(() => {
-    fetchRecipes();
-  }, [searchTerm, selectedCategory, sortBy]);
+    if (viewMode === 'all') {
+      fetchRecipes();
+      if (token) {
+        fetchFavorites('all');
+      }
+    } else if (viewMode === 'favorites') {
+      fetchFavorites('favorites');
+    }
+  }, [searchTerm, selectedCategory, sortBy, viewMode, token]);
 
   const handleRegister = async () => {
     const username = prompt("Введите имя пользователя для регистрации:");
@@ -270,6 +304,24 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const toggleFavorite = async (recipeId) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/recipes/${recipeId}/favorite`, {
+        method: 'POST',
+        headers: {'Authorization': `Bearer ${token}`}
+      });
+
+      if (response.ok) {
+        fetchFavorites(viewMode);
+      }
+    } catch (error) {
+      console.error('Ошибка при добавлении в избранные рецепты:', error);
+    }
+  };
+
   return (
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>   
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px' }}>
@@ -472,6 +524,23 @@ function App() {
         </select>
       </div>
 
+      {token && (
+        <div style={{ marginBottom: '30px', display: 'flex', gap: '10px'}}>
+          <button
+            onClick={() => setViewMode('all')}
+            style={{ padding: '10px 20px', borderRadius: '5px', border: '1px solid #2196f3', cursor: 'pointer', backgroundColor: viewMode === 'all' ? '#2196f3' : 'white', color: viewMode === 'all' ? 'white' : '#2196f3' }}
+          >
+            Все рецепты
+          </button>
+          <button
+            onClick={() => setViewMode('favorites')}
+            style={{ padding: '10px 20px', borderRadius: '5px', border: '1px solid #2196f3', cursor: 'pointer', backgroundColor: viewMode === 'favorites' ? '#2196f3' : 'white', color: viewMode === 'favorites' ? 'white' : '#2196f3' }}
+          >
+            Моё избранное ❤️
+          </button>
+        </div>
+      )}
+
       <div>
         <h2>Рецепты</h2>
         {serverError && (
@@ -525,6 +594,23 @@ function App() {
 
               {token && (
                 <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                  <button 
+                    onClick={() => toggleFavorite(recipe.id)} 
+                    style={{ 
+                      padding: '8px 12px', 
+                      backgroundColor: 'transparent', 
+                      border: '1px solid #ccc', 
+                      borderRadius: '4px', 
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="Добавить в избранное"
+                  >
+                    {(favoriteIds || []).includes(recipe.id) ? '❤️' : '🤍'}
+                  </button>
                   <button onClick={() => startEditing(recipe)} style={{ padding: '8px 12px', backgroundColor: '#2196f3', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
                     Редактировать
                   </button>
