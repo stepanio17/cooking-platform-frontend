@@ -14,6 +14,7 @@ function App() {
   const [sortBy, setSortBy] = useState("newest");
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [viewMode, setViewMode] = useState('all');
+  const [viewSevings, setViewSevings] = useState({});
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -22,6 +23,16 @@ function App() {
     image: null,
     ingredients: []
   });
+
+  const changeServings = (recipeId, delta, baseServings) => {
+    setViewSevings(prev => {
+      const current = prev[recipeId] || baseServings;
+      const next = current + delta;
+
+      if (next < 1 || next > 16) return prev;
+      return { ...prev, [recipeId]: next };
+    });
+  };
 
   const fetchRecipes = async () => {
     setIsLoading(true);
@@ -571,8 +582,30 @@ function App() {
                 />
               )}
 
-              <h3 style={{ marginTop: '0' }}>{recipe.title}. Порций: {recipe.servings}</h3>
-              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
+                <h3 style={{ margin: 0 }}>{recipe.title}</h3>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#555555' }}>
+                  <button
+                    onClick={() => changeServings(recipe.id, -1, recipe.servings)}
+                    style={{ padding: '5px 10px', backgroundColor: '#f0f0f0', border: '1px solid #ccc', cursor: 'pointer' }}
+                  >
+                    -
+                  </button>
+
+                  <span style={{ minWidth: '20px', textAlign: 'center' }}>
+                    {viewSevings[recipe.id] || recipe.servings} порц.
+                  </span>
+
+                  <button
+                    onClick={() => changeServings(recipe.id, 1, recipe.servings)}
+                    style={{ padding: '5px 10px', backgroundColor: '#f0f0f0', border: '1px solid #ccc', cursor: 'pointer' }}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
               <p style={{ color: '#2196f3', fontWeight: 'bold', margin: '5px 0' }}>
                 Категория: {recipe.category || 'Без категории'}
               </p>
@@ -581,11 +614,17 @@ function App() {
                 <div style={{ background: '#f9f9f9', padding: '10px', borderRadius: '5px', marginBottom: '10px 0' }}>
                   <h4 style={{ margin: '0 0 10px 0' }}>Ингредиенты:</h4>
                   <ul style={{ margin: 0, paddingLeft: '20px' }}>
-                    {recipe.ingredients.map(ing => (
-                      <li key={ing.id}>
-                        {ing.name} - <strong>{ing.amount} {ing.unit}</strong>
+                    {recipe.ingredients.map(ing => {
+                      const currentServings = viewSevings[recipe.id] || recipe.servings;
+                      const multiplier = currentServings / recipe.servings;
+                      const calcAmount = (ing.amount * multiplier).toFixed(1).replace(/\.0$/, '');
+
+                      return (
+                        <li key={ing.id}>
+                        {ing.name} - <strong>{calcAmount} {ing.unit}</strong>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                 </div>
               )}
