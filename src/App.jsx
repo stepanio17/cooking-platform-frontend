@@ -17,6 +17,7 @@ function App() {
   const [viewSevings, setViewSevings] = useState({});
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [ingredientSearch, setIngredientSearch] = useState('');
+  const [excludeIngredient, setExcludeIngredient] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -41,7 +42,7 @@ function App() {
     setIsLoading(true);
     setServerError(null);
     try {
-      const response = await fetch(`http://127.0.0.1:8000/recipes?search=${searchTerm.trim()}&category=${selectedCategory}&sort_by=${sortBy}&ingredient_search=${ingredientSearch.trim()}`);
+      const response = await fetch(`http://127.0.0.1:8000/recipes?search=${searchTerm.trim()}&category=${selectedCategory}&sort_by=${sortBy}&ingredient_search=${ingredientSearch.trim()}&exclude_ingredient=${excludeIngredient.trim()}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -91,7 +92,7 @@ function App() {
     } else if (viewMode === 'favorites') {
       fetchFavorites('favorites');
     }
-  }, [searchTerm, selectedCategory, sortBy, viewMode, token, ingredientSearch]);
+  }, [searchTerm, selectedCategory, sortBy, viewMode, token, ingredientSearch, excludeIngredient]);
 
   useEffect(() => {
     if (selectedRecipe) {
@@ -644,6 +645,14 @@ function App() {
           placeholder="Что есть в холодильнике?"
           value={ingredientSearch}
           onChange={(e) => setIngredientSearch(e.target.value)}
+          style={{ padding: '10px', fontSize: '16px', width: '100%', boxSizing: 'border-box' }}
+        />
+
+        <input
+          type="text"
+          placeholder="Что исключить?"
+          value={excludeIngredient}
+          onChange={(e) => setExcludeIngredient(e.target.value)}
           style={{ padding: '10px', fontSize: '16px', width: '100%', boxSizing: 'border-box' }}
         />
 
