@@ -15,12 +15,14 @@ function App() {
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [viewMode, setViewMode] = useState('all');
   const [viewSevings, setViewSevings] = useState({});
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     servings: 4,
-    category: '',
-    image: null,
+    category: 'Все',
+    image_url: null,
+    steps: [],
     ingredients: []
   });
 
@@ -196,6 +198,28 @@ function App() {
     }
   };
 
+  const uploadImageFile = async (file) => {
+    if (!file) return null;
+
+    const fileData = new FormData();
+    fileData.append("file", file);
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/upload-image', {
+        method: 'POST',
+        body: fileData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.image_url;
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке изображения:', error);
+    }
+    return null;
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError(null);
@@ -218,6 +242,11 @@ function App() {
       description: formData.description,
       servings: Number(formData.servings), 
       category: formData.category,
+      image_url: formData.image_url,
+      steps: (formData.steps || []).map((step, index) => ({
+        ...step,
+        step_number: index + 1
+      })),
       ingredients: formData.ingredients.map(ing => ({
         name: ing.name,
         amount: Number(ing.amount),
@@ -469,17 +498,91 @@ function App() {
               Добавить ингредиент
             </button>
           </div>
+          
+          <div style={{ margin: '10px 0'}}>
+            <label style={{ display: 'block', marginBottom: '5px'}}>Фото рецепта:</label> 
+              Фотография:
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files[0];
+                  const url = await uploadImageFile(file);
+                  if (url) {
+                    setFormData({ ...formData, image_url: url });
+                  }
+                }}
+              />
+              {formData.image_url && (
+                <div style={{ marginTop: '10px'}}>
+                  <img src={formData.image_url} alt="Preview" style={{height: '150px', objectFit: 'cover', borderRadius: '8px' }} />
+                </div>
+              )}
+          </div>
 
-          <label>
-            Фотография:
-            <input
-              type="file"
-              name="image"
-              accept="image/*"
-              onChange={(e) => setFormData({ ...formData, image: e.target.files[0] })}
-              style={{ padding: '10px', fontSize: '16px', marginLeft: '10px' }}
-            />
-          </label>
+          <div style={{ marginBottom: '20px', padding: '15px', background: '#f5f5f5', borderRadius: '8px' }}>
+          <h3>Пошаговый рецепт</h3>
+          
+          {(formData.steps || []).map((step, index) => (
+            <div key={index} style={{ marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid #ddd' }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Шаг {index + 1}</div>
+              
+              <textarea
+                value={step.instruction}
+                onChange={(e) => {
+                  const newSteps = [...formData.steps];
+                  newSteps[index].instruction = e.target.value;
+                  setFormData({ ...formData, steps: newSteps });
+                }}
+                placeholder="Опишите, что нужно сделать на этом шаге..."
+                style={{ width: '100%', minHeight: '60px', marginBottom: '10px' }}
+                required
+              />
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={async (e) => {
+                    const file = e.target.files[0];
+                    const url = await uploadImageFile(file);
+                    if (url) {
+                      const newSteps = [...formData.steps];
+                      newSteps[index].image_url = url;
+                      setFormData({ ...formData, steps: newSteps });
+                    }
+                  }} 
+                />
+                
+                {step.image_url && <img src={step.image_url} alt="Шаг" style={{ height: '50px', borderRadius: '4px' }} />}
+                
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    const newSteps = formData.steps.filter((_, i) => i !== index);
+                    setFormData({ ...formData, steps: newSteps });
+                  }}
+                  style={{ marginLeft: 'auto', background: '#ff4d4f', color: 'white', border: 'none', borderRadius: '4px', padding: '5px 10px' }}
+                >
+                  Удалить шаг
+                </button>
+              </div>
+            </div>
+          ))}
+
+          <button 
+            type="button" 
+            onClick={() => {
+              setFormData({ 
+                ...formData, 
+                steps: [...(formData.steps || []), { instruction: '', image_url: null }] 
+              });
+            }}
+            style={{ width: '100%', padding: '10px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px' }}
+          >
+            Добавить шаг
+          </button>
+        </div>
 
           <button 
             type="submit" 
@@ -569,21 +672,24 @@ function App() {
             {recipes.map(recipe => (
               <li key={recipe.id} style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
                 {recipe.image_url && (
-                  <img 
-                  src={recipe.image_url} 
-                  alt={`Фото блюда: ${recipe.title}`} 
-                  style={{ 
-                    width: '100%', 
-                    maxHeight: '300px', 
-                    objectFit: 'cover', 
-                    borderRadius: '5px',
-                    marginBottom: '15px' 
-                  }}
-                />
-              )}
+                  <div style={{ marginBottom: '15px', cursor: 'pointer' }} onClick={() => setSelectedRecipe(recipe)}>
+                    <img 
+                    src={recipe.image_url} 
+                    alt={`Фото блюда: ${recipe.title}`} 
+                    style={{ 
+                      width: '100%', 
+                      maxHeight: '300px', 
+                      objectFit: 'cover', 
+                      borderRadius: '5px',
+                      marginBottom: '15px' }}
+                      />
+                  </div>
+                )}
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
-                <h3 style={{ margin: 0 }}>{recipe.title}</h3>
+                <h3 style={{ margin: 0, cursor: 'pointer', textDecoration: 'underline', color: '#2196f3' }} onClick={() => setSelectedRecipe(recipe)}>
+                  {recipe.title}
+                </h3>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#555555' }}>
                   <button
@@ -614,7 +720,7 @@ function App() {
                 <div style={{ background: '#f9f9f9', padding: '10px', borderRadius: '5px', marginBottom: '10px 0' }}>
                   <h4 style={{ margin: '0 0 10px 0' }}>Ингредиенты:</h4>
                   <ul style={{ margin: 0, paddingLeft: '20px' }}>
-                    {recipe.ingredients.map(ing => {
+                    {(recipe.ingredients || []).map(ing => {
                       const currentServings = viewSevings[recipe.id] || recipe.servings;
                       const multiplier = currentServings / recipe.servings;
                       const calcAmount = (ing.amount * multiplier).toFixed(1).replace(/\.0$/, '');
@@ -664,6 +770,80 @@ function App() {
           </ul>
         )}
       </div>
+    {selectedRecipe && (
+        <div 
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)', // Полупрозрачный темный фон
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+            zIndex: 1000, padding: '20px'
+          }} 
+          onClick={() => setSelectedRecipe(null)} // Закрываем при клике на фон
+        >
+          <div 
+            style={{
+              backgroundColor: '#fff', padding: '30px', borderRadius: '12px',
+              maxWidth: '800px', width: '100%', maxHeight: '90vh',
+              overflowY: 'auto', position: 'relative'
+            }} 
+            onClick={(e) => e.stopPropagation()} // Клик по самой карточке НЕ закрывает её
+          >
+            {/* Кнопка закрытия (крестик) */}
+            <button 
+              onClick={() => setSelectedRecipe(null)}
+              style={{
+                position: 'absolute', top: '15px', right: '20px',
+                background: 'none', border: 'none', fontSize: '28px',
+                cursor: 'pointer', color: '#aaa'
+              }}
+            >
+              &times;
+            </button>
+
+            <h2 style={{ marginTop: 0, color: '#333' }}>{selectedRecipe.title}</h2>
+            
+            {selectedRecipe.image_url && (
+              <img 
+                src={selectedRecipe.image_url} 
+                alt={selectedRecipe.title} 
+                style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', borderRadius: '8px', marginBottom: '20px' }} 
+              />
+            )}
+
+            <p style={{ fontSize: '18px', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+              {selectedRecipe.description}
+            </p>
+
+            <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
+              <h3 style={{ marginTop: 0 }}>Ингредиенты:</h3>
+              <ul style={{ fontSize: '16px', lineHeight: '1.5' }}>
+                {(selectedRecipe.ingredients || []).map(ing => (
+                  <li key={ing.id}>{ing.name} — <strong>{ing.amount} {ing.unit}</strong></li>
+                ))}
+              </ul>
+            </div>
+
+            {selectedRecipe.steps && selectedRecipe.steps.length > 0 && (
+              <div>
+                <h3>Пошаговый процесс:</h3>
+                {(selectedRecipe.steps || []).map((step, index) => (
+                  <div key={index} style={{ marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px solid #eee' }}>
+                    <h4 style={{ margin: '0 0 10px 0', color: '#1890ff' }}>Шаг {step.step_number || index + 1}</h4>
+                    <p style={{ margin: '0 0 15px 0', whiteSpace: 'pre-wrap', fontSize: '16px' }}>{step.instruction}</p>
+                    {step.image_url && (
+                      <img 
+                        src={step.image_url} 
+                        alt={`Шаг ${step.step_number}`} 
+                        style={{ maxWidth: '100%', borderRadius: '8px', maxHeight: '300px', objectFit: 'cover' }} 
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
