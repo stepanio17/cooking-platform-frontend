@@ -16,6 +16,7 @@ function App() {
   const [viewMode, setViewMode] = useState('all');
   const [viewSevings, setViewSevings] = useState({});
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [ingredientSearch, setIngredientSearch] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -40,7 +41,7 @@ function App() {
     setIsLoading(true);
     setServerError(null);
     try {
-      const response = await fetch(`http://127.0.0.1:8000/recipes?search=${searchTerm.trim()}&category=${selectedCategory}&sort_by=${sortBy}`);
+      const response = await fetch(`http://127.0.0.1:8000/recipes?search=${searchTerm.trim()}&category=${selectedCategory}&sort_by=${sortBy}&ingredient_search=${ingredientSearch.trim()}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -90,7 +91,7 @@ function App() {
     } else if (viewMode === 'favorites') {
       fetchFavorites('favorites');
     }
-  }, [searchTerm, selectedCategory, sortBy, viewMode, token]);
+  }, [searchTerm, selectedCategory, sortBy, viewMode, token, ingredientSearch]);
 
   const handleRegister = async () => {
     const username = prompt("Введите имя пользователя для регистрации:");
@@ -598,11 +599,20 @@ function App() {
       
       <div style={{ marginBottom: '40px' }}>
         <h2>Поиск рецептов</h2>
+        
         <input
           type="text"
           placeholder="Что хочешь поесть?"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ padding: '10px', fontSize: '16px', width: '100%', boxSizing: 'border-box' }}
+        />
+
+        <input
+          type="text"
+          placeholder="Что есть в холодильнике?"
+          value={ingredientSearch}
+          onChange={(e) => setIngredientSearch(e.target.value)}
           style={{ padding: '10px', fontSize: '16px', width: '100%', boxSizing: 'border-box' }}
         />
 
