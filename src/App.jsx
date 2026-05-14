@@ -18,6 +18,8 @@ function App() {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [ingredientSearch, setIngredientSearch] = useState('');
   const [excludeIngredient, setExcludeIngredient] = useState('');
+  const [showProfile, setShowProfile] = useState(false);
+  const [userData, setUserData] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -36,6 +38,21 @@ function App() {
       if (next < 1 || next > 16) return prev;
       return { ...prev, [recipeId]: next };
     });
+  };
+
+  const fetchUserProfile = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch('http://127.0.0.1:8000/users/me', {
+        headers: {'Authorization': `Bearer ${token}`}
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUserData(data);
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке профиля пользователя:', error);
+    }
   };
 
   const fetchRecipes = async () => {
@@ -410,6 +427,14 @@ function App() {
         ) : (
           <button onClick={handleLogin} style={{padding: '10px', backgroundColor: '#2196f3', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}>
             Войти
+          </button>
+        )}
+        {token &&  (
+          <button 
+            onClick={() => {fetchUserProfile(); setShowProfile(true);}} 
+            style={{padding: '10px', backgroundColor: '#ff9800', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}
+          >
+            Профиль
           </button>
         )}
       </div>
@@ -909,6 +934,56 @@ function App() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {showProfile && userData && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1100, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', width: '400px', position: 'relative' }}>
+            <button onClick={() => setShowProfile(false)} style={{ position: 'absolute', top: '10px', right: '15px', border: 'none', background: 'none', fontSize: '24px', cursor: 'pointer' }}>×</button>
+            
+            <h2>Личный кабинет</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <label>Имя пользователя: <strong>{userData.username}</strong></label>
+              
+              <input 
+                type="text" placeholder="Ваше имя" 
+                value={userData.name || ''} 
+                onChange={(e) => setUserData({...userData, name: e.target.value})}
+                style={{ padding: '10px' }}
+              />
+              
+              <input 
+                type="text" placeholder="Ваша фамилия" 
+                value={userData.surname || ''} 
+                onChange={(e) => setUserData({...userData, surname: e.target.value})}
+                style={{ padding: '10px' }}
+              />
+              
+              <input 
+                type="email" placeholder="Email" 
+                value={userData.email || ''} 
+                onChange={(e) => setUserData({...userData, email: e.target.value})}
+                style={{ padding: '10px' }}
+              />
+
+              <button 
+                onClick={async () => {
+                  const response = await fetch('http://127.0.0.1:8000/users/me', {
+                    method: 'PUT',
+                    headers: { 
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify(userData)
+                  });
+                  if (response.ok) alert('Профиль обновлен!');
+                }}
+                style={{ padding: '12px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+              >
+                Сохранить изменения
+              </button>
+            </div>
           </div>
         </div>
       )}
