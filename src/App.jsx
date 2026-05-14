@@ -20,6 +20,9 @@ function App() {
   const [excludeIngredient, setExcludeIngredient] = useState('');
   const [showProfile, setShowProfile] = useState(false);
   const [userData, setUserData] = useState(null);
+  const [collections, setCollections] = useState([]);
+  const [newCollectionName, setNewCollectionName] = useState('');
+  const [activeCollection, setActiveCollection] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -52,6 +55,72 @@ function App() {
       }
     } catch (error) {
       console.error('Ошибка при загрузке профиля пользователя:', error);
+    }
+  };
+
+  const fetchCollections = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch('http://127.0.0.1:8000/collections', {
+        headers: {'Authorization': `Bearer ${token}`}
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCollections(data);
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке коллекций:', error);
+    }
+  };
+
+  const handleCreateCollection = async () => {
+    if (!newCollectionName.trim()) return;
+    try {
+      const response = await fetch('http://127.0.0.1:8000/collections', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+        body: JSON.stringify({ name: newCollectionName })
+      });
+      if (response.ok) {
+        setNewCollectionName('');
+        fetchCollections();
+      }
+    } catch (error) {
+      console.error('Ошибка при создании коллекции:', error);
+    }
+  };
+
+  const handleAddToCollection = async (collectionId) => {
+    if (!selectedRecipe) return;
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/collections/${collectionId}/recipes/${selectedRecipe.id}`, {
+        method: 'POST',
+        headers: {'Authorization': `Bearer ${token}`}
+      });
+      if (response.ok) {
+        alert('Рецепт добавлен в коллекцию!');
+      } else {
+        const error = await response.json();
+        alert(error.detail || 'Ошибка при добавлении рецепта в коллекцию.');
+      }
+    } catch (error) {
+      console.error('Ошибка при добавлении в коллекцию:', error);
+    }
+  };
+
+  const fetchCollectionRecipes = async (collectionId) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/collections/${collectionId}`, {
+        headers: {'Authorization': `Bearer ${token}`}
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setRecipes(data.recipes);
+        setActiveCollection(data.name);
+        setViewMode('custom-collection');
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке рецептов коллекции:', error);
     }
   };
 
@@ -431,7 +500,7 @@ function App() {
         )}
         {token &&  (
           <button 
-            onClick={() => {fetchUserProfile(); setShowProfile(true);}} 
+            onClick={() => {fetchUserProfile(); fetchCollections(); setShowProfile(true);}} 
             style={{padding: '10px', backgroundColor: '#ff9800', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}
           >
             Профиль
@@ -731,7 +800,32 @@ function App() {
       )}
 
       <div>
-        <h2>Рецепты</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0 }}>
+            {activeCollection ? `Папка: ${activeCollection}` : 'Все рецепты'}
+          </h2>
+
+          {/* Кнопка выхода из коллекции на главный экран */}
+          {activeCollection && (
+            <button 
+              onClick={() => {
+                setActiveCollection(null);
+                setViewMode('all'); 
+                fetchRecipes();     
+              }}
+              style={{
+                padding: '8px 15px',
+                backgroundColor: '#f0f0f0',
+                border: '1px solid #ccc',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              ← Назад ко всем рецептам
+            </button>
+          )}
+        </div>
         {serverError && (
           <div style={{ padding: '15px', backgroundColor: '#ffebee', color: '#c62828', borderRadius: '5px', marginBottom: '20px' }}>
             {serverError}
@@ -901,6 +995,24 @@ function App() {
                   👎 Не рекомендую ({selectedRecipe.dislikes_count || 0})
                 </button>
               </div>
+            
+              {token && (
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '14px', color: '#666' }}>Сохранить в:</span>
+                  <select 
+                    onChange={(e) => {
+                      if (e.target.value) handleAddToCollection(e.target.value);
+                      e.target.value = ""; // Сбрасываем выбор после нажатия
+                    }}
+                    style={{ padding: '5px', borderRadius: '4px', border: '1px solid #ccc', cursor: 'pointer' }}
+                  >
+                    <option value="">Выберите папку...</option>
+                    {collections.map(col => (
+                      <option key={col.id} value={col.id}>📁 {col.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             <p style={{ fontSize: '18px', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
@@ -983,6 +1095,38 @@ function App() {
               >
                 Сохранить изменения
               </button>
+
+              <hr style={{ margin: '25px 0 15px 0', borderTop: '1px solid #eee' }} />
+              <h3 style={{ marginTop: 0 }}>Мои коллекции</h3>
+              
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <input 
+                  type="text" 
+                  placeholder="Название новой папки..." 
+                  value={newCollectionName}
+                  onChange={(e) => setNewCollectionName(e.target.value)}
+                  style={{ flex: 1, padding: '8px' }}
+                />
+                <button 
+                  onClick={handleCreateCollection}
+                  style={{ padding: '8px 15px', backgroundColor: '#2196f3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Создать
+                </button>
+              </div>
+
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: '150px', overflowY: 'auto' }}>
+                {collections.length === 0 ? (
+                  <p style={{ color: '#888', fontSize: '14px' }}>У вас пока нет коллекций.</p>
+                ) : (
+                  collections.map(col => (
+                    <li key={col.id} onClick={() => { fetchCollectionRecipes(col.id); setShowProfile(false); }} style={{ padding: '10px', background: '#f5f5f5', marginBottom: '5px', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>📁 {col.name}</span>
+                      <span style={{ color: '#2196f3', fontSize: '12px' }}>Открыть →</span>
+                    </li>
+                  ))
+                )}
+              </ul>
             </div>
           </div>
         </div>
