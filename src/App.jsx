@@ -93,6 +93,16 @@ function App() {
     }
   }, [searchTerm, selectedCategory, sortBy, viewMode, token, ingredientSearch]);
 
+  useEffect(() => {
+    if (selectedRecipe) {
+      fetch(`http://127.0.0.1:8000/recipes/${selectedRecipe.id}/view`, {
+        method: 'POST'
+      }).then(() => {
+        fetchRecipes();
+      });
+    }
+  }, [selectedRecipe]);
+
   const handleRegister = async () => {
     const username = prompt("Введите имя пользователя для регистрации:");
     const password = prompt("Введите пароль для регистрации:");
@@ -308,6 +318,27 @@ function App() {
       setFormError("Ошибка соединения с сервером. Пожалуйста, попробуйте позже.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleRate = async (isPositive) => {
+    if (!token) {
+      alert('Пожалуйста, войдите в систему, чтобы оценить рецепт.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/recipes/${selectedRecipe.id}/rate?is_positive=${isPositive}`, {
+        method: 'POST',
+        headers: {'Authorization': `Bearer ${token}`}
+      });
+
+      if (response.ok) {
+        fetchRecipes();
+        setSelectedRecipe(null);
+      }
+    } catch (error) {
+      console.error('Ошибка при оценке рецепта:', error);
     }
   };
 
@@ -784,11 +815,11 @@ function App() {
         <div 
           style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.6)', // Полупрозрачный темный фон
+            backgroundColor: 'rgba(0,0,0,0.6)', 
             display: 'flex', justifyContent: 'center', alignItems: 'center',
             zIndex: 1000, padding: '20px'
           }} 
-          onClick={() => setSelectedRecipe(null)} // Закрываем при клике на фон
+          onClick={() => setSelectedRecipe(null)} 
         >
           <div 
             style={{
@@ -796,9 +827,8 @@ function App() {
               maxWidth: '800px', width: '100%', maxHeight: '90vh',
               overflowY: 'auto', position: 'relative'
             }} 
-            onClick={(e) => e.stopPropagation()} // Клик по самой карточке НЕ закрывает её
+            onClick={(e) => e.stopPropagation()} 
           >
-            {/* Кнопка закрытия (крестик) */}
             <button 
               onClick={() => setSelectedRecipe(null)}
               style={{
@@ -819,6 +849,25 @@ function App() {
                 style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', borderRadius: '8px', marginBottom: '20px' }} 
               />
             )}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px' }}>
+              <div style={{ color: '#888' }}>{selectedRecipe.views} просмотров</div>
+  
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button 
+                  onClick={() => handleRate(true)}
+                  style={{ background: '#e1f5fe', border: 'none', padding: '5px 15px', borderRadius: '15px', cursor: 'pointer' }}
+                >
+                  👍 Рекомендую ({selectedRecipe.likes_count || 0})
+                </button>
+                <button 
+                  onClick={() => handleRate(false)}
+                  style={{ background: '#ffebee', border: 'none', padding: '5px 15px', borderRadius: '15px', cursor: 'pointer' }}
+                >
+                  👎 Не рекомендую ({selectedRecipe.dislikes_count || 0})
+                </button>
+              </div>
+            </div>
 
             <p style={{ fontSize: '18px', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
               {selectedRecipe.description}
