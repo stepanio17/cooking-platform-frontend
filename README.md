@@ -33,6 +33,7 @@ cd recipe-platform
 2. **Склонируйте серверную и клиентскую части в созданную папку (обязательно используйте названия папок backend и frontend):**
 
 git clone https://github.com/stepanio17/cooking-platform-frontend.git frontend
+
 git clone https://github.com/stepanio17/cooking-platform-backend backend
 
 3. **Перейдите в папку бэкенда, где находится конфигурационный файл, и запустите сборку:**
