@@ -149,7 +149,7 @@ function App() {
     if (!token) return;
 
     try {
-      const response = await fetch('http://127.0.1:8000/favorites', {
+      const response = await fetch('http://127.0.0.1:8000/favorites', {
         headers: {'Authorization': `Bearer ${token}`}
       });
 
