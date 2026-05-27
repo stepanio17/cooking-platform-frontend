@@ -1,4 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { 
+  Box, Drawer, AppBar, Toolbar, Typography, Container, Button, Divider, 
+  List, ListItem, ListItemButton, ListItemIcon, ListItemText, Grid, Card, 
+  CardMedia, CardContent, CardActions, IconButton, TextField, CircularProgress, 
+  Alert, Stack, FormControl, InputLabel, Select, MenuItem, Dialog, DialogTitle, 
+  DialogContent 
+} from '@mui/material';
+import { RestaurantMenu, Favorite, AccountCircle, AddCircle, ExitToApp, MenuBook } from '@mui/icons-material';
+import { Grid as GridIcon, TypeIcon } from 'lucide-react';
 
 function App() {
   const [recipes, setRecipes] = useState([]);
@@ -481,657 +490,448 @@ function App() {
     }
   };
 
+  const drawerWidth = 240;
+
   return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>   
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px' }}>
-        {!token && (
-          <button onClick={handleRegister} style={{ padding: '10px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-            Регистрация
-          </button>
-        )}
-        {token ? (
-          <button onClick={handleLogout} style={{padding: '10px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}>
-            Выйти
-          </button>
-        ) : (
-          <button onClick={handleLogin} style={{padding: '10px', backgroundColor: '#2196f3', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}>
-            Войти
-          </button>
-        )}
-        {token &&  (
-          <button 
-            onClick={() => {fetchUserProfile(); fetchCollections(); setShowProfile(true);}} 
-            style={{padding: '10px', backgroundColor: '#ff9800', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}
-          >
-            Профиль
-          </button>
-        )}
-      </div>
-        
-      <h1>Recipe Platfrom</h1>
-
-      <div>
-        <h2>New Recipe</h2>
-
-        {formError && (
-          <div style={{ 
-            padding: '15px', 
-            backgroundColor: '#ffebee', 
-            color: 'red', 
-            borderRadius: '5px', 
-            marginBottom: '20px',
-            border: '1px solid #ef9a9a'
-          }}>
-            {formError}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    <Box sx={{ display: 'flex' }}>
+      {/* Верхняя панель приложения */}
+      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, backgroundColor: '#2196f3' }}>
+        <Toolbar>
+          <RestaurantMenu sx={{ mr: 2 }} />
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontFamily: 'Arial, sans-serif' }}>
+            Кулинарная платформа Аппетит.Про
+          </Typography>
           
-          <input 
-            type="text"
-            name="title"
-            placeholder="Название рецепта"
-            value={formData.title}
-            onChange={handleChange}
-            required
-            style={{ padding: '10px', fontSize: '16px' }}
-          />
-
-          <textarea
-            name="description"
-            placeholder="Описание рецепта"
-            value={formData.description}
-            onChange={handleChange}
-            required
-            style={{ padding: '10px', fontSize: '16px', height: '100px' }}
-          />
-
-          <label>
-            Порции:
-            <input
-              type="number"
-              name="servings"
-              placeholder="Количество порций"
-              min="1"
-              max="16"
-              value={formData.servings}
-              onChange={handleChange}
-              style={{ padding: '10px', fontSize: '16px', marginLeft: '10px' }}
-            />
-          </label>
-
-          <label>
-            Категория:
-            <select 
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              style={{ padding: '10px', fontSize: '16px', marginLeft: '10px' }}
-            >
-              {categories.filter(c => c !== "Все").map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </label>
-
-          <div style={{ margin: '10px 0', padding: '15px', border: '1px solid #ccc', borderRadius: '5px' }}>
-            <h4 style={{marginTop: 0}}>Ингредиенты</h4>
-
-            {formData.ingredients.map((ing, index) => (
-              <div key={index} style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center' }}>
-                <input
-                  type="text"
-                  placeholder="Название ингредиента"
-                  value={ing.name}
-                  onChange={(e) => handleIngredientChange(index, 'name', e.target.value)}
-                  style={{ flex: 1, padding: '10px', fontSize: '16px' }}
-                />
-                <input
-                  type="number"
-                  placeholder="Количество"
-                  value={ing.amount}
-                  onChange={(e) => handleIngredientChange(index, 'amount', e.target.value)}
-                  style={{ padding: '8px', width: '80px' }}
-                />
-                <select
-                  value={ing.unit}
-                  onChange={(e) => handleIngredientChange(index, 'unit', e.target.value)}
-                  style={{ padding: '8px', fontSize: '16px' }}
-                >
-                  <option value="г">г</option>
-                  <option value="кг">кг</option>
-                  <option value="мл">мл</option>
-                  <option value="л">л</option>
-                  <option value="шт">шт</option>
-                  <option value="ст.л.">ст.л.</option>
-                  <option value="ч.л.">ч.л.</option>
-                  <option value="по вкусу">по вкусу</option>
-                </select>
-                <button
-                  type="button"
-                  onClick={() => removeIngredientRow(index)}
-                  style={{ padding: '10px', fontSize: '16px', backgroundColor: '#f44336', color: 'white', border: 'none', cursor: 'pointer' }}
-                >
-                  Удалить
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={addIngredientRow}
-              style={{ padding: '10px', fontSize: '16px', backgroundColor: '#2196F3', color: 'white', border: 'none', cursor: 'pointer' }}
-            >
-              Добавить ингредиент
-            </button>
-          </div>
-          
-          <div style={{ margin: '10px 0'}}>
-            <label style={{ display: 'block', marginBottom: '5px'}}>Фото рецепта:</label> 
-              Фотография:
-              <input
-                type="file"
-                accept="image/*"
-                onChange={async (e) => {
-                  const file = e.target.files[0];
-                  const url = await uploadImageFile(file);
-                  if (url) {
-                    setFormData({ ...formData, image_url: url });
-                  }
-                }}
-              />
-              {formData.image_url && (
-                <div style={{ marginTop: '10px'}}>
-                  <img src={formData.image_url} alt="Preview" style={{height: '150px', objectFit: 'cover', borderRadius: '8px' }} />
-                </div>
-              )}
-          </div>
-
-          <div style={{ marginBottom: '20px', padding: '15px', background: '#f5f5f5', borderRadius: '8px' }}>
-          <h3>Пошаговый рецепт</h3>
-          
-          {(formData.steps || []).map((step, index) => (
-            <div key={index} style={{ marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid #ddd' }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Шаг {index + 1}</div>
-              
-              <textarea
-                value={step.instruction}
-                onChange={(e) => {
-                  const newSteps = [...formData.steps];
-                  newSteps[index].instruction = e.target.value;
-                  setFormData({ ...formData, steps: newSteps });
-                }}
-                placeholder="Опишите, что нужно сделать на этом шаге..."
-                style={{ width: '100%', minHeight: '60px', marginBottom: '10px' }}
-                required
-              />
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={async (e) => {
-                    const file = e.target.files[0];
-                    const url = await uploadImageFile(file);
-                    if (url) {
-                      const newSteps = [...formData.steps];
-                      newSteps[index].image_url = url;
-                      setFormData({ ...formData, steps: newSteps });
-                    }
-                  }} 
-                />
-                
-                {step.image_url && <img src={step.image_url} alt="Шаг" style={{ height: '50px', borderRadius: '4px' }} />}
-                
-                <button 
-                  type="button" 
-                  onClick={() => {
-                    const newSteps = formData.steps.filter((_, i) => i !== index);
-                    setFormData({ ...formData, steps: newSteps });
-                  }}
-                  style={{ marginLeft: 'auto', background: '#ff4d4f', color: 'white', border: 'none', borderRadius: '4px', padding: '5px 10px' }}
-                >
-                  Удалить шаг
-                </button>
-              </div>
-            </div>
-          ))}
-
-          <button 
-            type="button" 
-            onClick={() => {
-              setFormData({ 
-                ...formData, 
-                steps: [...(formData.steps || []), { instruction: '', image_url: null }] 
-              });
-            }}
-            style={{ width: '100%', padding: '10px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px' }}
-          >
-            Добавить шаг
-          </button>
-        </div>
-
-          <button 
-            type="submit" 
-            disabled={isSaving}
-            style={{ 
-              padding: '10px', fontSize: '16px', backgroundColor: '#4CAF50', color: 'white', border: 'none', cursor: 'pointer',
-              backgroundColor: isSaving ? '#9E9E9E' : '#4CAF50'}}
-            >
-            {isSaving ? 'Сохранение...' : 'Сохранить рецепт'}
-          </button>
-        </form>
-      </div>
-      
-      <div style={{ marginBottom: '40px' }}>
-        <h2>Поиск рецептов</h2>
-        
-        <input
-          type="text"
-          placeholder="Что хочешь поесть?"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ padding: '10px', fontSize: '16px', width: '100%', boxSizing: 'border-box' }}
-        />
-
-        <input
-          type="text"
-          placeholder="Что есть в холодильнике?"
-          value={ingredientSearch}
-          onChange={(e) => setIngredientSearch(e.target.value)}
-          style={{ padding: '10px', fontSize: '16px', width: '100%', boxSizing: 'border-box' }}
-        />
-
-        <input
-          type="text"
-          placeholder="Что исключить?"
-          value={excludeIngredient}
-          onChange={(e) => setExcludeIngredient(e.target.value)}
-          style={{ padding: '10px', fontSize: '16px', width: '100%', boxSizing: 'border-box' }}
-        />
-
-        <div style={{ display: 'flex', gap: '10px', marginTop: '15px', flexWrap: 'wrap' }}>
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              style={{
-                padding: '8px 15px',
-                backgroundColor: selectedCategory === cat ? '#2196f3' : '#f0f0f0',
-                color: selectedCategory === cat ? 'white' : 'black',
-                border: '1px solid #ccc',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                transition: '0.3s'
-              }}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
-        Сортировка
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          style={{ marginLeft: '10px', padding: '5px', fontSize: '16px', border: '1px solid #ccc', borderRadius: '4px' }}
-        >
-          <option value="newest">Сначала новые</option>
-        </select>
-      </div>
-
-      {token && (
-        <div style={{ marginBottom: '30px', display: 'flex', gap: '10px'}}>
-          <button
-            onClick={() => setViewMode('all')}
-            style={{ padding: '10px 20px', borderRadius: '5px', border: '1px solid #2196f3', cursor: 'pointer', backgroundColor: viewMode === 'all' ? '#2196f3' : 'white', color: viewMode === 'all' ? 'white' : '#2196f3' }}
-          >
-            Все рецепты
-          </button>
-          <button
-            onClick={() => setViewMode('favorites')}
-            style={{ padding: '10px 20px', borderRadius: '5px', border: '1px solid #2196f3', cursor: 'pointer', backgroundColor: viewMode === 'favorites' ? '#2196f3' : 'white', color: viewMode === 'favorites' ? 'white' : '#2196f3' }}
-          >
-            Моё избранное ❤️
-          </button>
-        </div>
-      )}
-
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0 }}>
-            {activeCollection ? `Папка: ${activeCollection}` : 'Все рецепты'}
-          </h2>
-
-          {/* Кнопка выхода из коллекции на главный экран */}
-          {activeCollection && (
-            <button 
-              onClick={() => {
-                setActiveCollection(null);
-                setViewMode('all'); 
-                fetchRecipes();     
-              }}
-              style={{
-                padding: '8px 15px',
-                backgroundColor: '#f0f0f0',
-                border: '1px solid #ccc',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              ← Назад ко всем рецептам
-            </button>
+          {!token ? (
+            <Box>
+              <Button color="inherit" onClick={handleRegister}>Регистрация</Button>
+              <Button color="inherit" variant="outlined" onClick={handleLogin} sx={{ ml: 1, borderColor: '#fff', '&:hover': { borderColor: '#fff', backgroundColor: 'rgba(255,255,255,0.1)'}}}>Войти</Button>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography variant="body1">Личный кабинет</Typography>
+              <Button color="inherit" startIcon={<ExitToApp />} onClick={handleLogout}>Выйти</Button>
+            </Box>
           )}
-        </div>
-        {serverError && (
-          <div style={{ padding: '15px', backgroundColor: '#ffebee', color: '#c62828', borderRadius: '5px', marginBottom: '20px' }}>
-            {serverError}
-          </div>
+        </Toolbar>
+      </AppBar>
+
+      {/* Боковая панель навигации */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box', backgroundColor: '#f5f5f5' },
+        }}
+      >
+        <Toolbar />
+        <Box sx={{ overflow: 'auto', p: 1  }}>
+          <List>
+            <ListItem disablePadding>
+              <ListItemButton selected={viewMode === 'all'} onClick={() => { setViewMode('all'); setActiveCollection(null); fetchRecipes(); }}>
+                <ListItemIcon><MenuBook /></ListItemIcon>
+                <ListItemText primary="Все рецепты" />
+              </ListItemButton>
+            </ListItem>
+
+            {token && (
+              <ListItem disablePadding>
+                <ListItemButton selected={viewMode === 'create'} onClick={() => setViewMode('create')}>
+                  <ListItemIcon><AddCircle color="primary" /></ListItemIcon>
+                  <ListItemText primary="Добавить рецепт" />
+                </ListItemButton>
+              </ListItem>
+            )}
+
+            {token && (
+              <ListItem disablePadding>
+                <ListItemButton selected={viewMode === 'favorites'} onClick={() => setViewMode('favorites')}>
+                  <ListItemIcon><Favorite color="primary" /></ListItemIcon>
+                  <ListItemText primary="Избранные рецепты" />
+                </ListItemButton>
+              </ListItem>
+            )}
+
+            {token && (
+              <ListItem disablePadding>
+                <ListItemButton onClick={() => { fetchUserProfile(); fetchCollections(); setShowProfile(true); }}> 
+                  <ListItemIcon><AccountCircle color="warning" /></ListItemIcon>
+                  <ListItemText primary="Личный кабинет" />
+                </ListItemButton>
+              </ListItem>
+            )}
+            </List>
+
+            {token && <Divider sx={{ my: 2 }} />}
+
+            {token && (
+              <Box>
+                <Typography variant="caption" sx={{ pl: 1, color: 'text.secondary', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px' }}>
+                  Мои коллекции
+                </Typography>
+                <List>
+                  {collections.length === 0 ? (
+                    <Typography variant="body2" sx={{ pl: 1, color: '#888', fontStyle: 'italic', mt: 1 }}>Нет коллекций</Typography>
+                  ) : (
+                    collections.map(col => (
+                      <ListItem disablePadding key={col.id}>
+                        <ListItemButton selected={activeCollection === col.name} onClick={() => fetchCollectionRecipes(col.id)}>
+                          <ListItemText primary={`${col.name}`} sx={{ '& .MuiTypography-root': { fontSize: '14px' }}}/>
+                        </ListItemButton>
+                      </ListItem>
+                    ))
+                  )}
+                </List>
+              </Box>
+            )}
+        </Box>
+      </Drawer>
+
+      {/* Основной контент */}
+      <Box component="main" sx={{ flexGrow: 1, p: 3, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+        <Toolbar />
+        <Container maxWidth="lg">
+          
+          {serverError && (
+            <Alert severity="error" sx={{ mb: 3 }}>{serverError}</Alert>
+          )}
+        
+        {/* Просмотр рецептов */}
+        {(viewMode === 'all' || viewMode === 'favorites' || viewMode === 'custom-collection') && (
+          <Box>
+            <Typography variant="h4"  sx={{ mb: 3, fontWeight: 'bold', fontFamily: 'Arial' }}>
+              {activeCollection ? `Коллекция: ${activeCollection}` : (viewMode === 'favorites' ? 'Избранные рецепты' : 'Все рецепты')}
+            </Typography>
+
+            <Box sx={{ backgroundColor: '#fff', p: 3, borderRadius: 3, boxShadow: '0 2px 4px rgba(0,0,0,0.05)', mb: 4 }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 'medium'}}>Поиск и фильтрация</Typography>
+
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={4}>
+                  <TextField fullWidth label="Что хочешь поесть?" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} variant="outlined" size="small" />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField fullWidth label="Что есть в холодильнике?" value={ingredientSearch} onChange={(e) => setIngredientSearch(e.target.value)} variant="outlined" size="small" />
+                </Grid>    
+                <Grid item xs={12} md={4}>
+                  <TextField fullWidth label="Что исключить?" value={excludeIngredient} onChange={(e) => setExcludeIngredient(e.target.value)} variant="outlined" size="small" />
+                </Grid>   
+              </Grid>
+
+              <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
+                {categories.map(cat => (
+                  <Button key={cat} variant={selectedCategory === cat ? 'contained' : 'outlined'} onClick={() => setSelectedCategory(cat)} size="small" sx={{ textTransform: 'none', borderRadius: '20px' }}>
+                    {cat}
+                  </Button>
+                ))}
+              </Box>
+            </Box>
+
+            {isLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <CircularProgress />
+                <Typography sx={{ ml: 2, mt: 0.5 }}>Загрузка рецептов...</Typography>
+              </Box>
+            ) : recipes.length === 0 ? (
+              <Typography variant="body1" sx={{ mt: 4, color: '#666', textAlign: 'center' }}>Рецепты не найдены</Typography>
+            ) : (
+              <Grid container spacing={3}>
+                {recipes.map(recipe => (
+                  <Grid item xs={12} sm={6} md={4} key={recipe.id}>
+                    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 3, position: 'relative', transition: '0.3s', '&:hover': { boxShadow: '5' } }}>
+
+                      {token && (
+                        <IconButton 
+                          onClick={() => toggleFavorite(recipe.id)}
+                          sx={{ position: 'absolute', top: 10, right: 10, backgroundColor: '#fff', zIndex: 10 }}
+                        >
+                          {favoriteIds.includes(recipe.id) ? <Favorite color="error" /> : <Favorite sx={{ color: '#ccc' }} />}
+                        </IconButton>
+                      )}
+
+                      {recipe.image_url && (
+                        <CardMedia
+                          component="img"
+                          height="180"
+                          image={recipe.image_url}
+                          alt={recipe.title}
+                          onClick={() => setSelectedRecipe(recipe)}
+                          sx={{ cursor: 'pointer', objectFit: 'cover' }}    
+                        />
+                      )}
+
+                      <CardContent sx={{ flexGrow: 1 }}>
+                        <Typography variant="caption" sx={{ color: '#2196f3', fontWeight: 'bold', textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+                          {recipe.category || 'Без категории'}
+                        </Typography>
+                        <Typography variant="h6" onClick={() => setSelectedRecipe(recipe)} sx={{ cursor: 'pointer', lineHeight: '1.3', fontWeight: 'bold', '&:hover': { color: '#2196f3' } }}>
+                          {recipe.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {recipe.description}
+                        </Typography>
+                      </CardContent>
+
+                      <Box sx={{ px: 2, display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#fafafa', py: 1 }}>
+                        <Button size="small" variant="outlined" sx={{ minWidth: '25px', p: '2px' }} onClick={() => changeServings(recipe.id, -1, recipe.servings)} >-</Button>
+                        <Typography variant="body2" sx={{ minWidth: '60px', textAlign: 'center' }}>
+                          {viewSevings[recipe.id] || recipe.servings} порций
+                        </Typography>
+                        <Button size="small" variant="outlined" sx={{ minWidth: '25px', p: '2px' }} onClick={() => changeServings(recipe.id, 1, recipe.servings)} >+</Button>
+                      </Box>
+
+                      {recipe.ingredients && recipe.ingredients.length > 0 && (
+                        <Box sx={{ px: 2, pt: 1, pb: 2, backgroundColor: '#fafafa', borderTop: '1px solid #eee' }}>
+                          <ul style={{ margin: 0, paddingLeft: '15px', fontSize: '13px', color: '#555' }}>
+                            {recipe.ingredients.slice(0, 3).map(ing => {
+                              const currentServings = viewSevings[recipe.id] || recipe.servings;
+                              const multiplier = currentServings / recipe.servings;
+                              const calcAmount = (ing.amount * multiplier).toFixed(1).replace(/\.0$/, '');
+                              return (
+                                <li key={ing.id}>{ing.name} - <strong>{calcAmount} {ing.unit}</strong></li>
+                              );
+                            })}
+                            {recipe.ingredients.length > 3 && <li style={{ color: '#2196f3', listStyleType: 'none', marginTop: '2px' }}>и ещё {recipe.ingredients.length - 3}...</li>}
+                          </ul>
+                        </Box>
+                      )}
+                      
+                      {token && (
+                        <CardActions sx={{ borderTop: '1px solid #eee', justifyContent: 'flex-end', gap: 1, p: 1.5 }}>
+                          <Button size="small" variant="contained" color="primary" onClick={() => startEditing(recipe)}>Редактировать</Button>
+                          <Button size="small" variant="outlined" color="error" onClick={() => handleDelete(recipe.id)}>Удалить</Button>
+                        </CardActions>
+                      )}
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </Box>
         )}
 
-        {isLoading ? (
-          <p style={{ fontSize: '16px', color: '#555555' }}>Загрузка рецептов...</p>
-        ) : recipes.length === 0 && !serverError ? (
-          <p>Рецепты не найдены. Будьте первыми, кто добавит рецепт!</p>
-        ) : (
-          <ul style={{ listStyleType: 'none', padding: 0 }}>
-            {recipes.map(recipe => (
-              <li key={recipe.id} style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
-                {recipe.image_url && (
-                  <div style={{ marginBottom: '15px', cursor: 'pointer' }} onClick={() => setSelectedRecipe(recipe)}>
-                    <img 
-                    src={recipe.image_url} 
-                    alt={`Фото блюда: ${recipe.title}`} 
-                    style={{ 
-                      width: '100%', 
-                      maxHeight: '300px', 
-                      objectFit: 'cover', 
-                      borderRadius: '5px',
-                      marginBottom: '15px' }}
-                      />
-                  </div>
+        {/* Форма добавления/редактирования рецепта */}
+        {viewMode === 'create' && (
+          <Box sx={{ backgroundColor: '#fff', p: 4, borderRadius: 3, boxShadow: 1 }}>
+            <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>Добавление нового рецепта</Typography>
+
+              {/* Форма для создания или редактирования рецепта nado dopisat*/}            
+            
+            
+            <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+              {formError && <Alert severity="error" sx={{ mb: 3 }}>{formError}</Alert>}
+
+              <Stack spacing={3}>
+                {/* Название и описание */}
+                <TextField fullWidth label="Название рецепта" name="title" value={formData.title} onChange={handleChange} required />
+                <TextField fullWidth multiline rows={4} label="Описание рецепта" name="description" value={formData.description} onChange={handleChange} required />
+                
+                {/* Порции и Категория */}
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth type="number" label="Количество порций" name="servings" inputProps={{ min: 1, max: 16 }} value={formData.servings} onChange={handleChange} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth>
+                      <InputLabel id="category-select-label">Категория</InputLabel>
+                      <Select labelId="category-select-label" name="category" label="Категория" value={formData.category} onChange={handleChange}>
+                        {categories.filter(c => c !== "Все").map(cat => (
+                          <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+
+                {/* Динамические Ингредиенты */}
+                <Box sx={{ p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>Ингредиенты</Typography>
+                  {formData.ingredients.map((ing, index) => (
+                    <Grid container spacing={1} key={index} alignItems="center" sx={{ mb: 1 }}>
+                      <Grid item xs={5}>
+                        <TextField fullWidth size="small" placeholder="Название ингредиента" value={ing.name} onChange={(e) => handleIngredientChange(index, 'name', e.target.value)} />
+                      </Grid>
+                      <Grid item xs={2}>
+                        <TextField fullWidth size="small" type="number" placeholder="Кол-во" value={ing.amount} onChange={(e) => handleIngredientChange(index, 'amount', e.target.value)} />
+                      </Grid>
+                      <Grid item xs={3}>
+                        <Select fullWidth size="small" value={ing.unit} onChange={(e) => handleIngredientChange(index, 'unit', e.target.value)}>
+                          {["г", "кг", "мл", "л", "шт", "ст.л.", "ч.л.", "по вкусу"].map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                        </Select>
+                      </Grid>
+                      <Grid item xs={2}>
+                        <Button fullWidth color="error" variant="outlined" onClick={() => removeIngredientRow(index)}>Удалить</Button>
+                      </Grid>
+                    </Grid>
+                  ))}
+                  <Button variant="contained" size="small" sx={{ mt: 1 }} onClick={addIngredientRow}>Добавить ингредиент</Button>
+                </Box>
+
+                {/* Загрузка главного фото блюда */}
+                <Box>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Главная фотография блюда:</Typography>
+                  <Button variant="outlined" component="label">
+                    Выбрать файл
+                    <input type="file" accept="image/*" hidden onChange={async (e) => {
+                      const file = e.target.files[0];
+                      const url = await uploadImageFile(file);
+                      if (url) setFormData({ ...formData, image_url: url });
+                    }} />
+                  </Button>
+                  {formData.image_url && (
+                    <Box sx={{ mt: 2 }}><img src={formData.image_url} alt="Preview" style={{ height: '120px', borderRadius: '8px', objectFit: 'cover' }} /></Box>
+                  )}
+                </Box>
+
+                {/* Пошаговые инструкции */}
+                <Box sx={{ p: 2, backgroundColor: '#f9f9f9', borderRadius: 2 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>Пошаговый процесс приготовления</Typography>
+                  {(formData.steps || []).map((step, index) => (
+                    <Box key={index} sx={{ mb: 3, pb: 2, borderBottom: '1px solid #ddd' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Шаг {index + 1}</Typography>
+                      <TextField fullWidth multiline rows={2} placeholder="Опишите, что нужно сделать на этом шаге..." value={step.instruction} onChange={(e) => {
+                        const newSteps = [...formData.steps];
+                        newSteps[index].instruction = e.target.value;
+                        setFormData({ ...formData, steps: newSteps });
+                      }} required sx={{ mb: 1 }} />
+                      
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                        <Button variant="outlined" size="small" component="label">
+                          Фото шага
+                          <input type="file" accept="image/*" hidden onChange={async (e) => {
+                            const file = e.target.files[0];
+                            const url = await uploadImageFile(file);
+                            if (url) {
+                              const newSteps = [...formData.steps];
+                              newSteps[index].image_url = url;
+                              setFormData({ ...formData, steps: newSteps });
+                            }
+                          }} />
+                        </Button>
+                        {step.image_url && <img src={step.image_url} alt="Шаг" style={{ height: '40px', borderRadius: 4 }} />}
+                        <Button color="error" size="small" sx={{ ml: 'auto' }} onClick={() => {
+                          const newSteps = formData.steps.filter((_, i) => i !== index);
+                          setFormData({ ...formData, steps: newSteps });
+                        }}>Удалить шаг</Button>
+                      </Box>
+                    </Box>
+                  ))}
+                  <Button variant="contained" color="success" size="small" onClick={() => {
+                    setFormData({ ...formData, steps: [...(formData.steps || []), { instruction: '', image_url: null }] });
+                  }}>Добавить шаг</Button>
+                </Box>
+
+                {/* Сабмит формы */}
+                <Button type="submit" variant="contained" color="primary" size="large" disabled={isSaving}>
+                  {isSaving ? 'Сохранение...' : (editingRecipeId ? 'Обновить рецепт' : 'Сохранить рецепт')}
+                </Button>
+              </Stack>
+            </Box>
+          </Box>
+        )}
+
+        </Container>
+      </Box>
+
+      <Dialog open={Boolean(selectedRecipe)} onClose={() => setSelectedRecipe(null)} maxWidth="md" fullWidth>
+        {selectedRecipe && (
+          <>
+            <DialogTitle sx={{ fontWeight: 'bold', pr: 6, fontFamily: 'Arial' }}>
+              {selectedRecipe.title}
+              <IconButton onClick={() => setSelectedRecipe(null)} sx={{ position: 'absolute', top: 8, right: 8, color: '#aaa', fontSize: '24px' }}>×</IconButton>
+            </DialogTitle>
+            <DialogContent dividers>
+              {selectedRecipe.image_url && (
+                <img src={selectedRecipe.image_url} alt={selectedRecipe.title} style={{ width: '100%', maxHeight: '380px', objectFit: 'cover', borderRadius: '8px', marginBottom: '15px' }} />
+              )}
+              
+              {/* Панель со счетчиком просмотров и лайками */}
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3, flexWrap: 'wrap' }}>
+                <Typography variant="body2" color="text.secondary">{selectedRecipe.views} просмотров</Typography>
+                <Button size="small" variant="contained" color="success" sx={{ borderRadius: '15px' }} onClick={() => handleRate(true)}>👍 Рекомендую ({selectedRecipe.likes_count || 0})</Button>
+                <Button size="small" variant="contained" color="error" sx={{ borderRadius: '15px' }} onClick={() => handleRate(false)}>👎 Не рекомендую ({selectedRecipe.dislikes_count || 0})</Button>
+                
+                {/* Быстрое добавление в папку */}
+                {token && (
+                  <FormControl size="small" sx={{ ml: 'auto', minWidth: 170 }}>
+                    <InputLabel>Сохранить в коллекцию</InputLabel>
+                    <Select label="Сохранить в коллекцию" value="" onChange={(e) => { if (e.target.value) handleAddToCollection(e.target.value); }}>
+                      {collections.map(col => <MenuItem key={col.id} value={col.id}>📁 {col.name}</MenuItem>)}
+                    </Select>
+                  </FormControl>
                 )}
+              </Box>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
-                <h3 style={{ margin: 0, cursor: 'pointer', textDecoration: 'underline', color: '#2196f3' }} onClick={() => setSelectedRecipe(recipe)}>
-                  {recipe.title}
-                </h3>
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mb: 3, fontSize: '1.05rem', lineHeight: 1.6 }}>{selectedRecipe.description}</Typography>
+              
+              {/* Ингредиенты внутри модалки */}
+              <Box sx={{ p: 2, backgroundColor: '#f9f9f9', borderRadius: 2, mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, fontSize: '16px' }}>Ингредиенты блюда:</Typography>
+                <ul style={{ lineHeight: 1.6, margin: 0, paddingLeft: '20px' }}>
+                  {(selectedRecipe.ingredients || []).map(ing => (
+                    <li key={ing.id}>{ing.name} — <strong>{ing.amount} {ing.unit}</strong></li>
+                  ))}
+                </ul>
+              </Box>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#555555' }}>
-                  <button
-                    onClick={() => changeServings(recipe.id, -1, recipe.servings)}
-                    style={{ padding: '5px 10px', backgroundColor: '#f0f0f0', border: '1px solid #ccc', cursor: 'pointer' }}
-                  >
-                    -
-                  </button>
-
-                  <span style={{ minWidth: '20px', textAlign: 'center' }}>
-                    {viewSevings[recipe.id] || recipe.servings} порц.
-                  </span>
-
-                  <button
-                    onClick={() => changeServings(recipe.id, 1, recipe.servings)}
-                    style={{ padding: '5px 10px', backgroundColor: '#f0f0f0', border: '1px solid #ccc', cursor: 'pointer' }}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              <p style={{ color: '#2196f3', fontWeight: 'bold', margin: '5px 0' }}>
-                Категория: {recipe.category || 'Без категории'}
-              </p>
-
-              {recipe.ingredients && recipe.ingredients.length > 0 && (
-                <div style={{ background: '#f9f9f9', padding: '10px', borderRadius: '5px', marginBottom: '10px 0' }}>
-                  <h4 style={{ margin: '0 0 10px 0' }}>Ингредиенты:</h4>
-                  <ul style={{ margin: 0, paddingLeft: '20px' }}>
-                    {(recipe.ingredients || []).map(ing => {
-                      const currentServings = viewSevings[recipe.id] || recipe.servings;
-                      const multiplier = currentServings / recipe.servings;
-                      const calcAmount = (ing.amount * multiplier).toFixed(1).replace(/\.0$/, '');
-
-                      return (
-                        <li key={ing.id}>
-                        {ing.name} - <strong>{calcAmount} {ing.unit}</strong>
-                      </li>
-                      );
-                    })}
-                  </ul>
-                </div>
+              {/* Пошаговый процесс внутри модалки */}
+              {selectedRecipe.steps && selectedRecipe.steps.length > 0 && (
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, fontSize: '16px' }}>Пошаговый процесс приготовления:</Typography>
+                  {selectedRecipe.steps.map((step, index) => (
+                    <Box key={index} sx={{ mb: 2, p: 2, borderLeft: '4px solid #2196f3', backgroundColor: '#fafafa', borderRadius: '0 8px 8px 0' }}>
+                      <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 'bold' }}>Шаг {step.step_number || index + 1}</Typography>
+                      <Typography variant="body1" sx={{ my: 1, whiteSpace: 'pre-wrap', fontSize: '14px' }}>{step.instruction}</Typography>
+                      {step.image_url && <img src={step.image_url} alt="Шаг фото" style={{ maxWidth: '100%', maxHeight: '220px', borderRadius: 4, objectFit: 'cover', marginTop: '5px' }} />}
+                    </Box>
+                  ))}
+                </Box>
               )}
-
-              <p>{recipe.description}</p>
-
-              {token && (
-                <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-                  <button 
-                    onClick={() => toggleFavorite(recipe.id)} 
-                    style={{ 
-                      padding: '8px 12px', 
-                      backgroundColor: 'transparent', 
-                      border: '1px solid #ccc', 
-                      borderRadius: '4px', 
-                      cursor: 'pointer',
-                      fontSize: '18px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                    title="Добавить в избранное"
-                  >
-                    {(favoriteIds || []).includes(recipe.id) ? '❤️' : '🤍'}
-                  </button>
-                  <button onClick={() => startEditing(recipe)} style={{ padding: '8px 12px', backgroundColor: '#2196f3', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-                    Редактировать
-                  </button>
-                  
-                  <button onClick={() => handleDelete(recipe.id)} style={{ padding: '8px 12px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-                    Удалить
-                  </button>
-                </div>
-              )}
-              </li>
-            ))}
-          </ul>
+            </DialogContent>
+          </>
         )}
-      </div>
-    {selectedRecipe && (
-        <div 
-          style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.6)', 
-            display: 'flex', justifyContent: 'center', alignItems: 'center',
-            zIndex: 1000, padding: '20px'
-          }} 
-          onClick={() => setSelectedRecipe(null)} 
-        >
-          <div 
-            style={{
-              backgroundColor: '#fff', padding: '30px', borderRadius: '12px',
-              maxWidth: '800px', width: '100%', maxHeight: '90vh',
-              overflowY: 'auto', position: 'relative'
-            }} 
-            onClick={(e) => e.stopPropagation()} 
-          >
-            <button 
-              onClick={() => setSelectedRecipe(null)}
-              style={{
-                position: 'absolute', top: '15px', right: '20px',
-                background: 'none', border: 'none', fontSize: '28px',
-                cursor: 'pointer', color: '#aaa'
-              }}
-            >
-              &times;
-            </button>
+      </Dialog>
 
-            <h2 style={{ marginTop: 0, color: '#333' }}>{selectedRecipe.title}</h2>
-            
-            {selectedRecipe.image_url && (
-              <img 
-                src={selectedRecipe.image_url} 
-                alt={selectedRecipe.title} 
-                style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', borderRadius: '8px', marginBottom: '20px' }} 
-              />
-            )}
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px' }}>
-              <div style={{ color: '#888' }}>{selectedRecipe.views} просмотров</div>
-  
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button 
-                  onClick={() => handleRate(true)}
-                  style={{ background: '#e1f5fe', border: 'none', padding: '5px 15px', borderRadius: '15px', cursor: 'pointer' }}
-                >
-                  👍 Рекомендую ({selectedRecipe.likes_count || 0})
-                </button>
-                <button 
-                  onClick={() => handleRate(false)}
-                  style={{ background: '#ffebee', border: 'none', padding: '5px 15px', borderRadius: '15px', cursor: 'pointer' }}
-                >
-                  👎 Не рекомендую ({selectedRecipe.dislikes_count || 0})
-                </button>
-              </div>
-            
-              {token && (
-                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '14px', color: '#666' }}>Сохранить в:</span>
-                  <select 
-                    onChange={(e) => {
-                      if (e.target.value) handleAddToCollection(e.target.value);
-                      e.target.value = ""; // Сбрасываем выбор после нажатия
-                    }}
-                    style={{ padding: '5px', borderRadius: '4px', border: '1px solid #ccc', cursor: 'pointer' }}
-                  >
-                    <option value="">Выберите папку...</option>
-                    {collections.map(col => (
-                      <option key={col.id} value={col.id}>📁 {col.name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-
-            <p style={{ fontSize: '18px', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
-              {selectedRecipe.description}
-            </p>
-
-            <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
-              <h3 style={{ marginTop: 0 }}>Ингредиенты:</h3>
-              <ul style={{ fontSize: '16px', lineHeight: '1.5' }}>
-                {(selectedRecipe.ingredients || []).map(ing => (
-                  <li key={ing.id}>{ing.name} — <strong>{ing.amount} {ing.unit}</strong></li>
-                ))}
-              </ul>
-            </div>
-
-            {selectedRecipe.steps && selectedRecipe.steps.length > 0 && (
-              <div>
-                <h3>Пошаговый процесс:</h3>
-                {(selectedRecipe.steps || []).map((step, index) => (
-                  <div key={index} style={{ marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px solid #eee' }}>
-                    <h4 style={{ margin: '0 0 10px 0', color: '#1890ff' }}>Шаг {step.step_number || index + 1}</h4>
-                    <p style={{ margin: '0 0 15px 0', whiteSpace: 'pre-wrap', fontSize: '16px' }}>{step.instruction}</p>
-                    {step.image_url && (
-                      <img 
-                        src={step.image_url} 
-                        alt={`Шаг ${step.step_number}`} 
-                        style={{ maxWidth: '100%', borderRadius: '8px', maxHeight: '300px', objectFit: 'cover' }} 
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {showProfile && userData && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1100, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', width: '400px', position: 'relative' }}>
-            <button onClick={() => setShowProfile(false)} style={{ position: 'absolute', top: '10px', right: '15px', border: 'none', background: 'none', fontSize: '24px', cursor: 'pointer' }}>×</button>
-            
-            <h2>Личный кабинет</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <label>Имя пользователя: <strong>{userData.username}</strong></label>
-              
-              <input 
-                type="text" placeholder="Ваше имя" 
-                value={userData.name || ''} 
-                onChange={(e) => setUserData({...userData, name: e.target.value})}
-                style={{ padding: '10px' }}
-              />
-              
-              <input 
-                type="text" placeholder="Ваша фамилия" 
-                value={userData.surname || ''} 
-                onChange={(e) => setUserData({...userData, surname: e.target.value})}
-                style={{ padding: '10px' }}
-              />
-              
-              <input 
-                type="email" placeholder="Email" 
-                value={userData.email || ''} 
-                onChange={(e) => setUserData({...userData, email: e.target.value})}
-                style={{ padding: '10px' }}
-              />
-
-              <button 
-                onClick={async () => {
+      <Dialog open={showProfile} onClose={() => setShowProfile(false)} maxWidth="xs" fullWidth>
+        {userData && (
+          <>
+            <DialogTitle sx={{ fontWeight: 'bold', fontFamily: 'Arial' }}>
+              Личный кабинет
+              <IconButton onClick={() => setShowProfile(false)} sx={{ position: 'absolute', top: 8, right: 8, color: '#aaa', fontSize: '24px' }}>×</IconButton>
+            </DialogTitle>
+            <DialogContent dividers>
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                <Typography variant="body1">Пользователь: <strong>{userData.username}</strong></Typography>
+                
+                {/* Редактирование данных юзера */}
+                <TextField fullWidth size="small" label="Ваше имя" value={userData.name || ''} onChange={(e) => setUserData({...userData, name: e.target.value})} />
+                <TextField fullWidth size="small" label="Ваша фамилия" value={userData.surname || ''} onChange={(e) => setUserData({...userData, surname: e.target.value})} />
+                <TextField fullWidth size="small" type="email" label="Email" value={userData.email || ''} onChange={(e) => setUserData({...userData, email: e.target.value})} />
+                
+                <Button variant="contained" color="success" onClick={async () => {
                   const response = await fetch('http://127.0.0.1:8000/users/me', {
                     method: 'PUT',
-                    headers: { 
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${token}` 
-                    },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify(userData)
                   });
-                  if (response.ok) alert('Профиль обновлен!');
-                }}
-                style={{ padding: '12px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
-              >
-                Сохранить изменения
-              </button>
-
-              <hr style={{ margin: '25px 0 15px 0', borderTop: '1px solid #eee' }} />
-              <h3 style={{ marginTop: 0 }}>Мои коллекции</h3>
-              
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                <input 
-                  type="text" 
-                  placeholder="Название новой папки..." 
-                  value={newCollectionName}
-                  onChange={(e) => setNewCollectionName(e.target.value)}
-                  style={{ flex: 1, padding: '8px' }}
-                />
-                <button 
-                  onClick={handleCreateCollection}
-                  style={{ padding: '8px 15px', backgroundColor: '#2196f3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                >
-                  Создать
-                </button>
-              </div>
-
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: '150px', overflowY: 'auto' }}>
-                {collections.length === 0 ? (
-                  <p style={{ color: '#888', fontSize: '14px' }}>У вас пока нет коллекций.</p>
-                ) : (
-                  collections.map(col => (
-                    <li key={col.id} onClick={() => { fetchCollectionRecipes(col.id); setShowProfile(false); }} style={{ padding: '10px', background: '#f5f5f5', marginBottom: '5px', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>📁 {col.name}</span>
-                      <span style={{ color: '#2196f3', fontSize: '12px' }}>Открыть →</span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+                  if (response.ok) alert('Профиль обновлен успешно!');
+                }}>Сохранить изменения профиля</Button>
+                
+                <Divider sx={{ my: 2 }} />
+                
+                {/* Управление папками-коллекциями */}
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: '15px' }}>Создать новую коллекцию</Typography>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <TextField size="small" fullWidth placeholder="Название новой папки" value={newCollectionName} onChange={(e) => setNewCollectionName(e.target.value)} />
+                  <Button variant="contained" onClick={handleCreateCollection}>Создать</Button>
+                </Box>
+              </Stack>
+            </DialogContent>
+          </>
+        )}
+      </Dialog>
+    </Box>
   );
 }
 
