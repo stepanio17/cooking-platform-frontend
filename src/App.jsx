@@ -23,7 +23,7 @@ function App() {
   const [sortBy, setSortBy] = useState("newest");
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [viewMode, setViewMode] = useState('all');
-  const [viewSevings, setViewSevings] = useState({});
+  const [viewServings, setViewServings] = useState({});
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [ingredientSearch, setIngredientSearch] = useState('');
   const [excludeIngredient, setExcludeIngredient] = useState('');
@@ -43,7 +43,7 @@ function App() {
   });
 
   const changeServings = (recipeId, delta, baseServings) => {
-    setViewSevings(prev => {
+    setViewServings(prev => {
       const current = prev[recipeId] || baseServings;
       const next = current + delta;
 
@@ -508,9 +508,23 @@ function App() {
               <Button color="inherit" variant="outlined" onClick={handleLogin} sx={{ ml: 1, borderColor: '#fff', '&:hover': { borderColor: '#fff', backgroundColor: 'rgba(255,255,255,0.1)'}}}>Войти</Button>
             </Box>
           ) : (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="body1">Личный кабинет</Typography>
-              <Button color="inherit" startIcon={<ExitToApp />} onClick={handleLogout}>Выйти</Button>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Button 
+                color="inherit" 
+                startIcon={<AccountCircle />} 
+                onClick={() => { fetchUserProfile(); fetchCollections(); setShowProfile(true); }}
+                sx={{ textTransform: 'none', fontSize: '1rem' }}
+              >
+                Личный кабинет
+              </Button>
+              <Button 
+                color="inherit" 
+                startIcon={<ExitToApp />} 
+                onClick={handleLogout}
+                sx={{ textTransform: 'none', fontSize: '1rem' }}
+              >
+                Выйти
+              </Button>
             </Box>
           )}
         </Toolbar>
@@ -549,15 +563,6 @@ function App() {
                 <ListItemButton selected={viewMode === 'favorites'} onClick={() => setViewMode('favorites')}>
                   <ListItemIcon><Favorite color="primary" /></ListItemIcon>
                   <ListItemText primary="Избранные рецепты" />
-                </ListItemButton>
-              </ListItem>
-            )}
-
-            {token && (
-              <ListItem disablePadding>
-                <ListItemButton onClick={() => { fetchUserProfile(); fetchCollections(); setShowProfile(true); }}> 
-                  <ListItemIcon><AccountCircle color="warning" /></ListItemIcon>
-                  <ListItemText primary="Личный кабинет" />
                 </ListItemButton>
               </ListItem>
             )}
@@ -676,7 +681,7 @@ function App() {
                       <Box sx={{ px: 2, display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#fafafa', py: 1 }}>
                         <Button size="small" variant="outlined" sx={{ minWidth: '25px', p: '2px' }} onClick={() => changeServings(recipe.id, -1, recipe.servings)} >-</Button>
                         <Typography variant="body2" sx={{ minWidth: '60px', textAlign: 'center' }}>
-                          {viewSevings[recipe.id] || recipe.servings} порций
+                          {viewServings[recipe.id] || recipe.servings} порций
                         </Typography>
                         <Button size="small" variant="outlined" sx={{ minWidth: '25px', p: '2px' }} onClick={() => changeServings(recipe.id, 1, recipe.servings)} >+</Button>
                       </Box>
@@ -685,7 +690,7 @@ function App() {
                         <Box sx={{ px: 2, pt: 1, pb: 2, backgroundColor: '#fafafa', borderTop: '1px solid #eee' }}>
                           <ul style={{ margin: 0, paddingLeft: '15px', fontSize: '13px', color: '#555' }}>
                             {recipe.ingredients.slice(0, 3).map(ing => {
-                              const currentServings = viewSevings[recipe.id] || recipe.servings;
+                              const currentServings = viewServings[recipe.id] || recipe.servings;
                               const multiplier = currentServings / recipe.servings;
                               const calcAmount = (ing.amount * multiplier).toFixed(1).replace(/\.0$/, '');
                               return (
